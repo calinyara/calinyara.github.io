@@ -20,7 +20,7 @@ description:
 <p align="center">图1：虚拟化要解决的问题</p>
 
 <br>
-[**ASOR**](https://calinyara.github.io/), 是一个简单的虚拟化管理软件(VMM)，用来帮助人们了解硬件辅助虚拟化的基本概念以及虚拟化管理软件的实现。虚拟化管理软件又被称作Hypervisor,有些文献将Hypervisor分成TYPE 1和TYPE 2两种类型，如图2所示。所谓TYPE 1类型也就是Hypervisor直接运行在硬件上，虚拟操作系统运行在Hypervisor之上，而TYPE 1类型的Hypervisor则运行在一个被称之为HOST的操作系统之上，其上再运行虚拟操作系统。其实，如果把TYPE 2中的HOST操作系统与hypervisor并成一个整体来看，这个整体也可以认为是一个TYPE 1的 Hypervisor。实现一个简单的TYPE 1类型的Hypervisor和实现一个简单的操作系统类似，前者比后者多了虚拟化的软件支持。从这个意义上，ASOR作为一个TYPE 1的Hypervisor也可以用来学习研究如何实现一个简单的操作系统。
+[**ASOR**](https://github.com/calinyara/asor), 是一个简单的虚拟化管理软件(VMM)，用来帮助人们了解硬件辅助虚拟化的基本概念以及虚拟化管理软件的实现。虚拟化管理软件又被称作Hypervisor,有些文献将Hypervisor分成TYPE 1和TYPE 2两种类型，如图2所示。所谓TYPE 1类型也就是Hypervisor直接运行在硬件上，虚拟操作系统运行在Hypervisor之上，而TYPE 1类型的Hypervisor则运行在一个被称之为HOST的操作系统之上，其上再运行虚拟操作系统。其实，如果把TYPE 2中的HOST操作系统与hypervisor并成一个整体来看，这个整体也可以认为是一个TYPE 1的 Hypervisor。实现一个简单的TYPE 1类型的Hypervisor和实现一个简单的操作系统类似，前者比后者多了虚拟化的软件支持。从这个意义上，ASOR作为一个TYPE 1的Hypervisor也可以用来学习研究如何实现一个简单的操作系统。
 
 <br>
 <div align="center"><img src="/assets/images/asor/f002.png"/></div>
@@ -218,7 +218,7 @@ VMM软件的生命周期如图18所示
 // 待续
 
 # 参考
-- [ASOR代码](https://calinyara.github.io/)
+- [ASOR代码](https://github.com/calinyara/asor)
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-66555622-4"></script>
