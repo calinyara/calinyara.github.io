@@ -1,16 +1,16 @@
 ---
 layout: post
-title:  "ASOR - 基于x86架构的虚拟机实现"
-categories: ASOR
-tags: ASOR
+title:  "虚拟网络设备简介"
+categories: Network
+tags: Network
 author: Calinyara
 description: 
 ---
 
-# 1. 概述
+# 概述
 
 <br>
-Linux提供了许多虚拟网络设备用于运行VMs和containers。
+Linux提供了许多虚拟网络设备用于运行VMs和containers。下面对这些网络虚拟化设备做相应介绍。
 
 <br>
 ## Bridge
@@ -21,7 +21,7 @@ Linux提供了许多虚拟网络设备用于运行VMs和containers。
 <div align="center"><img src="/assets/images/vnet_interface/f0001_bridge.png"/></div>
 <p align="center">图1：Bridge</p>
 
-例子
+<br>
 ```
 # ip link add br0 type bridge
 # ip link set eth0 master br0
@@ -48,29 +48,32 @@ Linux提供了许多虚拟网络设备用于运行VMs和containers。
 <div align="center"><img src="/assets/images/vnet_interface/f0003_team.png"/></div>
 <p align="center">图3：Team Device</p>
 
+<br>
 Linux中还有一种叫[**net_failover**](https://www.kernel.org/doc/html/latest/networking/net_failover.html)的虚拟设备，如下图所示，将半虚拟化的网卡方案和passthru的方案聚合成一个界面。增加了抵抗设备出错的风险。
 
 <br>
 <div align="center"><img src="/assets/images/vnet_interface/f0004_net_failover.png"/></div>
 <p align="center">图4：net_failover</p>
 
+<br>
 ## VLAN
 
-**VLAN**被用来划分子网，可以减少广播包对网络的压力。其通过往以太网数据包头添加一个TAG来实现过滤。
-
-下图是**VLAN**数据包格式
+**VLAN**被用来划分子网，可以减少广播包对网络的压力。其通过往以太网数据包头添加一个TAG来实现过滤。下图是**VLAN**数据包格式:
 
 <br>
 <div align="center"><img src="/assets/images/vnet_interface/f0005_vlan_01.png"/></div>
 <p align="center">图5：VLAN数据包格式</p>
 
+<br>
+
 可以使用VLAN来分割VMs, Containers以及host中的网络。以下是一个例子
 
+<br>
 ```
 # ip link add link eth0 name eth0.2 type vlan id 2
 # ip link add link eth0 name eth0.3 type vlan id 3
 ```
-
+<br>
 <div align="center"><img src="/assets/images/vnet_interface/f0006_vlan.png"/></div>
 <p align="center">图6：VLAN</p>
 
@@ -84,11 +87,13 @@ Linux中还有一种叫[**net_failover**](https://www.kernel.org/doc/html/latest
 <div align="center"><img src="/assets/images/vnet_interface/f0007_vxlan_01.png"/></div>
 <p align="center">图7：VXLAN数据包格式</p>
 
+<br>
 VXLAN可以跨本地网络建立子网。
 
 <div align="center"><img src="/assets/images/vnet_interface/f0008_vxlan.png"/></div>
 <p align="center">图8：VXLAN</p>
 
+<br>
 ```
 # ip link add vx0 type vxlan id 100 local 1.1.1.1 remote 2.2.2.2 dev eth0 dstport 4789
 ```
@@ -101,6 +106,7 @@ VXLAN可以跨本地网络建立子网。
 <div align="center"><img src="/assets/images/vnet_interface/f0021_veth.png"/></div>
 <p align="center">图9：VETH</p>
 
+<br>
 ```
 # ip netns add net1
 # ip netns add net2
@@ -123,6 +129,7 @@ VXLAN可以跨本地网络建立子网。
 <p align="center">图11：MACVLAN</p>
 
 **MACVLAN** 有5中不同的模式，在隔离性上有所不同。
+<br>
 
 **1 Private Mode**: 该模式下，各个端点只能与外界通信。MACVLAN端点之间不能通信。
 
@@ -146,6 +153,7 @@ VXLAN可以跨本地网络建立子网。
 
 **5 Source Mode**: 该模式主要用于traffic过滤，是一种基于MAC的VLAN。可参考 [源代码](https://git.kernel.org/pub/scm/linux/kernel/git/davem/net.git/commit/?id=79cf79abce71)
 
+<br>
 综上模式，Bridge Mode是最常用的模式。
 
 ```
@@ -165,21 +173,26 @@ VXLAN可以跨本地网络建立子网。
 <div align="center"><img src="/assets/images/vnet_interface/f0015_ipvlan.png"/></div>
 <p align="center">图16：IPVLAN</p>
 
+<br>
 **IPVLAN**可以工作在L2或L3模式。如果工作在L2模式，其parent设备的行为可以看成是Bridge或Switch，与 **MACVLAN**的区别在于其通过IP地址来过滤数据包，而后者通过MAC地址过滤。如果工作在L3模式，其parent设备的行为可以看成是一个Router。
 
+<br>
 <div align="center"><img src="/assets/images/vnet_interface/f0016_ipvlan_01.png"/></div>
 <p align="center">图17：IPVLAN working in L2 Mode</p>
 
+<br>
 <div align="center"><img src="/assets/images/vnet_interface/f0017_ipvlan_02.png"/></div>
 <p align="center">图18：IPVLAN working in L3 Mode</p>
 
+<br>
 **MACVLAN**与 **IPVLAN**在很多方面相似。下面介绍几需使用 **IPVLAN** 而非 **MACVLAN**的场景。
 
-1) 如果host连接的外部交换机只允许一个MAC地址。
-2) 如果出于性能考虑，需要关闭网卡杂项模式（promiscuous mode)， **MACVLAN**需要网卡运行在杂项模式。 
-3) 创建的virtual device 超过了parent的MAC地址容量。
-4) 如果工作在不安全的L2网络
+- 1) 如果host连接的外部交换机只允许一个MAC地址。
+- 2) 如果出于性能考虑，需要关闭网卡杂项模式（promiscuous mode)， **MACVLAN**需要网卡运行在杂项模式。
+- 3) 创建的virtual device 超过了parent的MAC地址容量。
+- 4) 如果工作在不安全的L2网络
 
+<br>
 ```
 # ip netns add ns0
 # ip link add name ipvl1 link eth0 type ipvlan mode l2
@@ -191,9 +204,11 @@ VXLAN可以跨本地网络建立子网。
 
 类似 **MACVLAN**用以取代 **Bridge + VETH** 来连接不同的namespace. **MACVTAP** 用以取代 **Bridge + TUN/TAP**来连接不同的VMs。**MACVLAN / IPVLAN** 连接不同的namespace, 旨在将Guest namespace和Host的网络接口直接程序给外部Switch。**MACVTAP / IPVTAP** 连接不同VMs, 内核为其创建了设备文件/dev/tapX，可以直接被虚拟化软件QEMU使用。**MACVTAP**与 **IPVTAP**的区别 和 **MACVLAN** 与 **IPVLAN**的区别相类似。
 
+<br>
 <div align="center"><img src="/assets/images/vnet_interface/f0018_macvtap.png"/></div>
 <p align="center">图19：MACVTAP</p>
 
+<br>
 ```
 # ip link add link eth0 name macvtap0 type macvtap
 ```
@@ -206,11 +221,13 @@ VXLAN可以跨本地网络建立子网。
 <div align="center"><img src="/assets/images/vnet_interface/f0019_macsec_01.png"/></div>
 <p align="center">图20：MACsec封包</p>
 
+<br>
 其主要也是用在保护APR，NS, DHCP等以太网数据包
 
 <div align="center"><img src="/assets/images/vnet_interface/f0020_macsec.png"/></div>
 <p align="center">图21：MACsec</p>
 
+<br>
 ```
 # ip link add macsec0 link eth1 type macsec
 ```
