@@ -99,6 +99,9 @@ VXLAN可以跨本地网络建立子网。
 ```
 
 <br>
+参考 [Introduction to Cloud Overlay Networks - VXLAN](https://www.youtube.com/watch?v=Jqm_4TMmQz8&t=362s)
+
+<br>
 ## VETH
 
 **VETH**（virtual Ethernet）是一种本地以太网隧道。该设备成对出现，用于连接不同的namespace。如下图所示, 其一端收到的数据会直接发送给其peer端。
