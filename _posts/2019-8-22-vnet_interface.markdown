@@ -19,7 +19,7 @@ Linux提供了许多虚拟网络设备用于运行VMs和containers。下面对�
 
 <br>
 <div align="center"><img src="/assets/images/vnet_interface/f0001_bridge.png"/></div>
-<p align="center">图1：Bridge</p>
+<p align="center">图1a：Bridge</p>
 
 <br>
 ```
@@ -37,7 +37,7 @@ Linux提供了许多虚拟网络设备用于运行VMs和containers。下面对�
 
 <br>
 <div align="center"><img src="/assets/images/vnet_interface/f0022_tun.png"/></div>
-<p align="center">图1：tun应用</p>
+<p align="center">图1b：tun应用</p>
 
 <br>
 1. APP 1通过socket 1发送了一个数据包给目的地址192.168.1.10
