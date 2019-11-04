@@ -1,8 +1,8 @@
 ---
 layout: post
 title:  "虚拟网络设备简介"
-categories: Network
-tags: Network
+categories: Technology
+tags: Network Virtualization Linux
 author: Calinyara
 description: 
 ---
