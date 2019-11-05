@@ -7,13 +7,13 @@ author: Calinyara
 description: 
 ---
 
-# 综述
+# 1 综述
 
 <br>
 本文描述了Armv8-A AArch64的虚拟化支持。包括stage 2页表转换，虚拟异常，以及陷阱。本文介绍了一些基础的硬件辅助虚拟化理论以及一些Hypervisor如何利用这些虚拟化特性的例子，但文本不会讲述某一具体的Hypervisor软件是如何工作的以及如何开发一款Hypervisor软件。通过阅读本文，你会学到两种类型的Hypervisor以及它们是如何映射到Arm的异常级别。你将能解释陷阱是如何工作的以及其是如何被用来进行各种模拟操作。你将能描述Hypervisor可以产生什么虚拟异常以及产生这些虚拟异常的机制。看懂本文需要一定基础，本文假定你熟悉ARMv8体系结构的异常模型和内存管理。
 
 <br>
-# 虚拟化简介
+# 1.1 虚拟化简介
 <br>
 这里我们将介绍一些基础的Hypervisor和虚拟化的理论知识。如果你已经有一定的基础或是已经熟悉了这些概念，可以跳过这部分内容。我们用Hypervisor这个词来定义一种负责创建，管理以及调度虚拟机(Virtual Machines, VMs)的软件。
 
@@ -29,7 +29,7 @@ description:
 - **沙箱**：虚拟机可以作为一个沙箱来为运行其中应用屏蔽其他软件的干扰，或者避免其干扰其他软件。例如在虚拟机种运行特定软件，可以避免该软件的bug或病毒导致物理机器上的其他软件损坏。
 
 <br>
-## Hypervisor的两种类型
+## 1.2 Hypervisor的两种类型
 <br>
 
 Hypervisor通常被分成两种类型，独立类型Type 1和寄生类型 Type 2。我们先看看Type 2类型Hypervisor。对于Type 2类型的Hypervisor，其寄生的宿主操作系统拥有对硬件平台和资源的全部控制权，包括CPU和物理内存。下图展示了Type 2类型的Hypervisor。
@@ -53,7 +53,7 @@ Hypervisor通常被分成两种类型，独立类型Type 1和寄生类型 Type 2
 在开源社区常见的Hypervisor, Xen (Type 1) 和 KVM (Type 2)就分属这两种不同的类型。其他开源的或知识产权的Hypervisor，参见 [WiKi](https://en.wikipedia.org/wiki/Comparison_of_platform_virtualization_software)。
 
 <br>
-## 全虚拟化和半虚拟化
+## 1.3 全虚拟化和半虚拟化
 <br>
 
 关于虚拟机，经典定义是：虚拟机是一个独立的隔离的计算环境，这种计算环境让使用者看起来就像在使用真实的物理机器一样。尽管我们可以在基于ARM的硬件平台上模拟真实硬件，但这通常不是有效的做法，因此我们常常不这么做。例如，模拟一个真实的以太网设备是非常慢的，这是因为对任何一个模拟寄存器的访问都会陷入到Hypervisor当中进行模拟。比起直接访问物理寄存器来说，这种操作的代价要昂贵得多。一个替代方案是修改客户操作系统，使之意识到自身运行在虚拟机当中，通过在Hypervisor中模拟一个虚拟设备来给客户机使用。以此来换取更好得I/O性能。严格来说，全虚拟化需要完全模拟真实硬件，性能上会比较差。开源项目Xen推进了半虚拟化，通过修改客户机操作系统的核心部分使其更适合在虚拟环境中运行，以此来提高性能。
@@ -61,7 +61,7 @@ Hypervisor通常被分成两种类型，独立类型Type 1和寄生类型 Type 2
 另一个使用半虚拟化的原因是早期的体系结构并不是为虚拟化而设计的，存在虚拟化漏洞。因为虚拟化要求所有敏感指令或访问敏感资源的指令都能被截获模拟。对于存在虚拟化漏洞的体系结构，则需要通过半虚拟化的方案来填补漏洞。而今，大多数体系机构都支持硬件辅助虚拟化，包括Arm。这使得操作系统的核心部分无需修改也能获得较好得性能。只有少数存储和网络相关的I/O设备仍然采用半虚拟化的方案来改善性能，这类半虚拟化的方案如，virtio 和 Xen PV Bus。
 
 <br>
-## 虚拟机（VM）和虚拟CPU (vCPU)
+## 1.4 虚拟机（VM）和虚拟CPU (vCPU)
 <br>
 
 非常有必要区分虚拟机（VM）和虚拟CPU(vCPU)。这有利于理解本文的后续部分。例如，一个内存页面可以被分配一个虚拟机，因此所有属于该VM的所有vCPUs都可以访问它。而一个虚拟中断只是针对某个vCPU，因此只有该vCPU可以收到。虚拟机（VM）和虚拟CPU(vCPU)的关系如图3所示。
@@ -75,10 +75,10 @@ Hypervisor通常被分成两种类型，独立类型Type 1和寄生类型 Type 2
 
 <br>
 
-## AArch64的虚拟化
+# 2 AArch64的虚拟化
 <br>
 对于ARMv8, Hypervisor运行在EL2异常级别。只有运行在EL2或更高异常级别的软件才可以访问并配置各项虚拟化功能。
-- **第二阶段页表转换**
+- **Stage 2转换**
 - **EL1/0指令和寄存器访问**
 - **注入虚拟异常**
 
@@ -94,7 +94,7 @@ Hypervisor通常被分成两种类型，独立类型Type 1和寄生类型 Type 2
 **注意**：保护状态的EL2用灰色显示是因为，保护状态的EL2并不总是可用，这是Armv8.4-A引入的特性。
 
 <br>
-## Stage 2 转换
+## 2.1 Stage 2 转换
 <br>
 ### 什么是Stage 2 转换
 <br>
@@ -110,7 +110,138 @@ stage 2转换表的格式和stage 1的类似。但也有些属性的处理不太
 <br>
 ### VMID
 <br>
+每一个虚拟机都被分配一个ID号，称之为VMID。这个ID号用于标记某个特定的TLB项属于哪一个VM。VMID使得不同的VM可以共享同一块TLB缓存。VMID存储在寄存器VTTBR_EL2中，可以是8或16比特，由VTCR_EL2.vs比特位控制，其中16比特的VMID支持是在armv8.1-A中扩展的，是可选的。需注意，EL2和EL3的地址转换不需要VMID标记，因为它们不需要stage 2转换。
 
+<br>
+### VMID vs ASID
+<br>
+TLB项也可以用ASID(Address Space Identifier)标记，每个应用都被操作系统分配有一个ASID，所有属于同一个应用的TLB项都有相同的ASID。这使得不同应用可以共享同一块TLB缓存。每一个VM有它自己的ASID空间。例如两个不同的VMs同时使用ASID 5，但指的是不同的东西。对于虚拟机而言，VMID结合ASID同时使用至关重要。
+
+<br>
+### 属性整合和覆盖
+<br>
+stage 1 和 stage 2映射都包含属性，例如存储类型，访问权限等。内存管理单元（MMU）会将两个阶段的属性整合成一个最终属性，整合的原则是选择更有限制的属性。且看如下例子：
+<br>
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/6 Combining stage 1 and stage 2 attributes.png"/></div>
+<p align="center">图6：映射属性整合</p>
+
+在上面的例子中，Device属性比起Normal属性更具限制性，因此最终结果是Device属性。同样的原理，如果你将顺序调换一下也不会改变最终属性。
+
+<br>
+属性整合在大多数情况下都可用工作。但有些时候，例如在VM的早期启动阶段，Hypervisor希望改变一下默认的行为。可以通过如下寄存器比特来改变默认的正常行为。
+<br>
+- HCR_EL2.CD: 控制所有stage 1属性为Non-cacheable。
+- HCR_EL2.DC：强制所有stage 1属性为Normal，Write-Back Cacheable。
+- HCR_EL2.FWB (Armv8.4-A引入)：使用stage 2属性覆盖stage 1属性，而不是使用默认的限制性整合原则。
+
+<br>
+### 模拟MMIO
+<br>
+
+与物理机器的物理地址空间类似，VM的IPA地址空间包含了范围内存与外围设备的区域。如下图所示
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/7 Emulating IMMO new.png"/></div>
+<p align="center">图7：模拟MMIO</p>
+
+<br>
+VM使用外围设备区域来访问真实的物理外围设备，这包含了直通设备和虚拟外围设备。虚拟设备完全由Hypervisor模拟，如下图所示
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/8 Stage 2 mappings for virtual and assigned peripherals.png"/></div>
+<p align="center">图8：stage 2映射</p>
+
+<br>
+
+一个直通设备被直接分配给VM并映射到IPA地址空间，这使得VM中的软件可用直接访问真实的物理硬件。一个虚拟的外围设备由Hypervisor模拟，其stage 2的转换项被标记为fault。虽然VM中的软件看来其是直接与物理设备交互，但实际上这一访问会导致stage 2转换错误，从而进入相应的异常处理程序由Hypervisor模拟。
+
+<br>
+为了模拟一个外围设备，Hypervisor需要知道哪一个外围设备被访问，外围设备的哪一个寄存器被访问，是读访问还是写访问，访问长度是多少，以及使用哪些寄存器来传送数据。
+
+<br>
+当处理stage 1 faults时，FAR_ELx寄存器包含了触发异常的虚拟地址。但虚拟地址不是给Hypervisor用的，Hypervisor通常不会知道客户操作系统如何配置虚拟地址空间的映射。对于stage 2 faults，有一个专门的寄存器HPFAR_EL2，该寄存器会报告发生错误的IPA地址。IPA地址空间由Hypervisor控制，因此可用利用此寄存器里的信息来进行必要的模拟。
+
+<br>
+ESR_ELx寄存器用于报告发生异常的相关信息。当loads或stores一个通用寄存器触发stage 2 fault时，相关异常信息由这些寄存器提供。这些信息包含了，访问的长度，访问的原地址或目的地址。Hypervisor可以以此来判断对虚拟外围设备的访问权限。下图展示了一个 **陷入(trapping) -- 模拟(emulating)** 的访问过程。
+<br>
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/9 Example of emulating an access to MMIO.png"/></div>
+<p align="center">图9：外围设备模拟</p>
+
+1. VM里的软件尝试访问虚拟外围设备，这个例子当中是虚拟UART的接收FIFO。
+2. 该访问被stage 2转换block住，导致一个abort异常被路由到EL2。
+   - 异常处理程序查询ESR_EL2关于异常的信息，如访问长度，目的寄存器，是load还是store操作。
+   - 异常处理程序查询HPFAR_EL2，取得发生abort的IPA地址。
+3. Hypervisor通过ESR_EL2和HPFAR_EL2里的相关信息对相关虚拟外围设备作模拟，模拟完成后通过ERET指令返回vCPU，并从发生异常的下一条指令继续执行。
+
+<br>
+### 系统内存管理单元(System Memory Management Units, SMMUs)
+
+<br>
+到目前为止，我们只考虑了从处理器发起的各种访问。我们还需要考虑其他主设备如DMA控制器发起的访问。我们需要一种方法来扩展stage 2映射以保护这些主设备的地址空间。如果一个DMA控制器没有使用虚拟化，那它看起来应该如下图所示
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/10 DMA controller that does not use virtualization.png"/></div>
+<p align="center">图10：没有虚拟化的DMA访问</p>
+<br>
+DMA控制器通常由内核驱动编程控制。内核驱动会确保不违背操作系统层面的内存保护原则，也就是或一个应用不能使用DMA访问其没有权限访问的其他应用的内存。
+
+<br>
+下面让我们考虑操作系统运行在虚拟机中的场景。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/11 system with the OS running within a VM new.png"/></div>
+<p align="center">图11：虚拟化下没有SMMU的DMA访问</p>
+<br>
+
+在这个系统中，Hyperviosr通过stage 2映射来隔离不同VMs的地址空间。这是基于Hypervisor控制的stage 2映射表实现的。而驱动则直接与DMA控制器交互，这会产生两个问题：
+
+<br>
+- **隔离**：DMA控制器访问在虚拟机之间没有了隔离，这破坏了虚拟机的沙箱功能
+- **地址空间**： 利用两级映射转换，是内核以为PAs就是IPAs。但DMA控制仍然看到的是PAs。因此DMA控制器和内核看到的是不同的地址空间，为了解决这个问题，每当VM与DMA控制器交互时就需要陷入到Hypervisor中做必要的转换。这种处理方式是及其没有效率的，其容易出错。
+
+<br>
+
+解决的办法是将stage 2的机制推广到DMA控制器。这样的话这些主设备控制器也需要一个MMU，Armv8称之为SMMU（更常见的一个叫IOMMU）。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/12 System Memory Management Unit.png"/></div>
+<p align="center">图12：虚拟化下通过SMMU的DMA访问</p>
+<br>
+
+Hypervisor负责设置SMMU，以使DMA控制器看到的地址空间与kenrel看到地址空间相同。这样就能解决上述两个问题。
+
+<br>
+## 2.2 指令的陷入与模拟
+<br>
+有时Hypervisor需要模拟一些操作，例如VM里运行的软件试图配置处理器的一些属性，如电源管理或是缓存一致性时。通常你不会允许VM直接配置这些属性，因为这会打破隔离性，从而影响其他VMs。这就需要通过以陷入的方式产生异常，从而在异常处理程序中做相应的模拟。Armv8包含一些陷入控制来帮助实现 **陷入(trapping) -- 模拟(emulating)**。如果对相应操作配置了陷入，则这种操作发生时会陷入到更高的异常级别，便于Hypervisor模拟。
+
+<br>
+举个例子，执行等待中断指令**WFI**通过会使CPU进入低功耗状态。然而，当配置HCR_EL2.TWI==1时，如果在EL0/EL1执行**WFI**则会导致EL2的异常。
+（注：陷入不是为虚拟化而设计的，例如你会发现有陷入到EL3和EL1的异常，但异常对虚拟化实现至关重要。）
+
+<br>
+对于 **WFI**的例子里， 操作系统通过在一个idle loop里执行 **WFI**指令，但虚拟机中的操作系统执行该指令时，会陷入到Hypervisor里模拟，这时Hypervisor通常会调度另一个vCPU执行。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/13 Example of trapping WFIs from EL1 to EL2.png"/></div>
+<p align="center">图13：WFI指令模拟</p>
+<br>
+
+## 2.3 寄存器的访问
+<br>
+**陷入 -- 模拟**的另一个用途是用来呈现虚拟寄存器的值。例如寄存器ID_AA64MMFR0_EL1是用来报告处理器内存相关特性的，操作系统可能会读取该寄存器来决定在内核中开启或关闭某些特性。Hypervisor可能会给VM呈现一个与实际物理寄存器不同的值。这是怎么实现的呢？首先Hypervisor需要开启对该寄存器读操作的陷入。然后，在陷入的异常处理中判断异常相关的信息并进行模拟，在这个例子中就是设置一个虚拟的值。最后ERET返回。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/14 Example of trapping and emulating an operation.png"/></div>
+<p align="center">图14：寄存器访问的陷入模拟</p>
+<br>
+
+<br>
+<br>
 ...待续
 
 
