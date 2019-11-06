@@ -240,6 +240,94 @@ Hypervisor负责设置SMMU，以使DMA控制器看到的地址空间与kenrel看
 <p align="center">图14：寄存器访问的陷入模拟</p>
 <br>
 
+MIDR and MPIDR
+<br>
+**陷入 -- 模拟** 的开销是很大的。这种操作需要先陷入到EL2，然后由Hypervisor做相应模拟再返回客户操作系统。对于某些寄存器如 **ID_AA64MMFR0_EL1**，操作系统并不经常访问，**陷入 -- 模拟**的开销还是可以接受的。但对于某些经常访问的寄存器以及性能相关的代码，陷入太频繁的话会对系统性能造成很大影响。对于这些情况，我们需要尽可能地优化 **陷入**。
+
+- **MIDR_EL1**: 存有处理器类型信息
+- **MPIDR_EL1**：亲和性配置
+
+Hypervisor可能希望在访问上述两个寄存器时不要总是陷入。对这些寄存器，Armv8提供了其对应地不需要陷入的版本。Hypervisor可以在进入VM时先配置好这些寄存器的值。当VM中读到 MIDR_EL1 / MPIDR_EL1时会自动返回VPIDR_EL2 / VMPIDR_EL2的值而不发生陷入。
+
+- **VPIDR_EL2**：读取 **MIDR_EL1**返回 **VPIDR_EL2**的值避免陷入
+- **VMPIDR_EL2**：读取 **MPIDR_EL1**返回 **VMPIDR_EL2**的值避免陷入
+
+注意：VPIDR_EL2 / VMPIDR_EL2 在硬件reset后没有初始化的值，它们必须由软件启动代码初始化一个合理的值。
+
+<br>
+# 异常虚拟化
+
+<br>
+中断是硬件通知软件的机制，在一个使用虚拟化的系统中，中断处理会变得更为复杂。有些中断会由Hypervisor直接处理，有些中断被分配给了VM，需要由VM中的处理程序处理，并且还有可能在接收到这个中断时，对应的VM并没有被调度运行。这意味着我们不仅需要支持在EL2中直接处理中断，还需要一种机制能将收到的中断转发给相应VM的vCPU。Armv8提供了vIRQs, vFIQs, 和vSErrors来支持虚拟中断。这些中断的行为和物理中断（IRQs, FIQs, 和 SErrors）类似，只不过只有当系统运行在EL0/1是才会收到，运行在EL2/3是收不到虚拟中断的。
+
+<br>
+## 开启虚拟中断
+
+<br>
+虚拟中断也是根据中断类型控制的。为了发送虚拟中断到EL0/1, Hypervisor需要设置 **HCR_EL2**中相应的中断路由比特位。例如，开启vIRQ，你需要设置 **HCR_EL2.IMO**， 这意味着物理IRQ中断将被发送到EL2，同时虚拟中断将被发送到EL1。理论上，Armv8可以配置成VM直接接收物理FIQs和虚拟IRQs。但在实际应用中，通常只配置VM接收虚拟中断。
+
+<br>
+## 产生虚拟中断
+<br>
+有两种方式产生虚拟中断
+<br>
+1. 配置HCR_EL2，由内部CPU核产生
+2. 使用GICv2及以上版本的外部中断控制器
+
+<br>
+我们先来看第一种机制，HCR_EL2中有如下的控制比特位
+<br>
+- **VI**: 配置vIRQ
+- **VF**: 配置vFIQ
+- **VSE**: 配置vSError
+<br>
+设置上述比特位等同于中断控制器向vCPU发送中断信号。和常规物理中断一样，虚拟中断受PSTATE控制。这种机制简单易用，但有个明显的缺点，需要由Hypervisor来模拟中断控制器的相关操作，一系列的 **陷入 -- 模拟**将带来性能上的开销。
+
+<br>
+第二种方式是使用Arm的通用中断控制器(Generic Interrupt Controller, GIC)来产生虚拟中断。从GICv2版本开始，GIC可以通过物理CPU interface 和 虚拟CPU interface发送物理中断和虚拟中断。见下图：
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/15 The GIC virtual and physical CPU interfaces.png"/></div>
+<p align="center">图15：GIC中断发送</p>
+<br>
+
+这两个CPU interface是等同的，区别是一个发送物理中断信号，另一个发送虚拟中断信号。Hypervisor可以将虚拟CPU interface映射给VM，以便VM可以直接和GIC通信。这种方式的好处是Hypervisor只需建立映射，不需要做任何模拟，从而提升了性能。（**PS：虚拟化性能提升的关键就在优化陷入，减少次数，优化流程**）
+
+<br>
+## 中断转发给vCPU的例子
+<br>
+上面介绍了虚拟中断是如何开启和生产的。让我们来看一个中断转发给vCPU的例子。考虑一个物理外围设备，该设备被分配给了某个VM，如下图所示：
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/16 Example sequence for forwarding a virtual interrupt.png"/></div>
+<p align="center">图16：虚拟中断转发的例子</p>
+<br>
+具体步骤如下：
+<br>
+1. 物理外围设备发送中断信号给GIC
+2. GIC产生物理中断异常，可能是IRQ或FIQ。由于配置了HCR_EL2.IMO/FMO，这些异常会被路由到EL2。Hyperviosr发现该设备已被分配给了某个VM，于是检查需要将该中断信号需要转发给哪个vCPU。
+3. Hypervisor配置了GIC将该物理中断以虚拟中断的形式转给某个vCPU。GIC于是发送vIRQ/vFIQ信号，如果此时还运行在EL2，这些信号会被忽略。
+4. Hypervisor将控制权返还给vCPU。
+5. 处理器运行在EL0或EL1，来自GIC的虚拟中断被接收（受PSTATE控制）
+
+<br>
+上面的例子展示了如何将一个物理中断以虚拟中断的形式转发给VM。如果是一个虚拟中断，Hypervisor可以直接注入虚拟中断，而不要将虚拟中断绑定到某个物理中断。
+
+<br>
+## 中断屏蔽
+<br>
+
+我们知道中断屏蔽比特位PSTATE.I, PSTATE.F,  PSTATE.A分别对应IRQs, FIQs和SErrors。如果运行在虚拟化环境中，这些比特位的工作方式由些许不同。
+
+<br>
+例如，对于IRQs，设置EL2.IMO意味着
+- 物理IRQ路由至EL2
+- 对EL0/EL1开启vIRQs
+<br>
+这同时也改变了PSTATE.I 屏蔽的含义， 当运行在EL0/EL1是，如果 HCR_E2.IMO==1, PSTATE.I针对的是虚拟的vIRQs而物理的pIRQs。
+
+# 通用时钟虚拟化
+
 <br>
 <br>
 ...待续
