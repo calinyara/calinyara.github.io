@@ -324,6 +324,7 @@ Hypervisor可能希望在访问上述两个寄存器时不要总是陷入。对�
 - 物理IRQ路由至EL2
 - 对EL0/EL1开启vIRQs
 <br>
+
 这同时也改变了PSTATE.I 屏蔽的含义， 当运行在EL0/EL1是，如果 HCR_E2.IMO==1, PSTATE.I针对的是虚拟的vIRQs而物理的pIRQs。
 
 ## 2.5 通用时钟虚拟化
