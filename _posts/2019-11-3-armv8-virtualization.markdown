@@ -83,7 +83,7 @@ Hypervisor通常被分成两种类型，独立类型Type 1和寄生类型 Type 2
 - **注入虚拟异常**
 
 <br>
-保护状态和非保护状态下的异常级别及可运行的软件如图4所示
+安全状态和非安全状态下的异常级别及可运行的软件如图4所示
 <br>
 
 <br>
@@ -91,7 +91,7 @@ Hypervisor通常被分成两种类型，独立类型Type 1和寄生类型 Type 2
 <p align="center">图4：AArch64的虚拟化</p>
 <br>
 
-**注意**：保护状态的EL2用灰色显示是因为，保护状态的EL2并不总是可用，这是Armv8.4-A引入的特性。
+**注意**：安全状态的EL2用灰色显示是因为，安全状态的EL2并不总是可用，这是Armv8.4-A引入的特性。
 
 <br>
 ## 2.1 Stage 2 转换
@@ -327,7 +327,197 @@ Hypervisor可能希望在访问上述两个寄存器时不要总是陷入。对�
 
 这同时也改变了PSTATE.I 屏蔽的含义， 当运行在EL0/EL1是，如果 HCR_E2.IMO==1, PSTATE.I针对的是虚拟的vIRQs而物理的pIRQs。
 
-## 2.5 通用时钟虚拟化
+<br>
+## 2.5 时钟虚拟化
+<br>
+Arm体系结构中，在每个处理器上都有一组通用时钟。通用时钟由一组比较器组成，用来与系统计数器比较。当比较器的值小于等于系统计数器时便会产生时钟中断。在下图中，我们可以看到系统中通用时钟由黄色框组成。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/17 System counter module and per-core comparators.png"/></div>
+<p align="center">图17：通用时钟比较器与系统计数模块</p>
+<br>
+
+下图展示了虚拟化系统中运行两个vCPU的时序。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/18 system with a hypervisor that hosts two vCPUs.png"/></div>
+<p align="center">图18：Hypervisor运行有两个vCPU的时序</p>
+<br>
+
+物理世界的时间（墙上时间）4ms里，每个vCPU各运行了2ms。如果我们设置vCPU0的比较器在T=0之后的3ms产生一个中断，那么你希望实际在哪个墙上时间点产生中断呢？是vCPU0的虚拟时间的2ms，也就是墙上时间3ms那个点还是
+vCPU0虚拟时间3ms的那个点？
+
+<br>
+
+实际上，Arm体系结构同时支持上述两种设置，这取决于你使用何种虚拟化方案。让我们看看这是如何实现的。
+
+<br>
+
+运行在vCPU上的软件可以访问如下两种时钟
+<br>
+- EL1物理时钟
+- EL1虚拟时钟
+
+<br>
+EL1物理时钟会有系统计数器模块直接比较，使用的是绝对的墙上时间。而与EL1虚拟时钟比较的是虚拟计数器。虚拟计数器是在物理计数器的基础上减去一个偏移。Hypervisor负责为当前调度运行的vCPU指定对应的偏移寄存器。这种方式使得虚拟时间只会覆盖vCPU实际运行的那部分时间。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/19 How the virtual counter is generated.png"/></div>
+<p align="center">图19：虚拟计数器的计算</p>
+<br>
+
+下图展示了虚拟时间运作的原理
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/20 Example of using Virtual Timer.png"/></div>
+<p align="center">图20：虚拟时间原理</p>
+<br>
+
+在一个6ms的时段里，每个vCPU分别运行了3ms。Hypervisor可以使用偏移寄存器来将vCPU的时间调整为其实际运行的时间。
+
+<br>
+
+## 2.6 虚拟化主机扩展
+<br>
+
+图21显示了一个Type 1类型的虚拟化系统的软件栈与异常级别的对应关系，Hypervisor部分运行在EL2，VMs运行在EL0/1。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/21 Standalone hypervisor with Armv8-A Exception levels.png"/></div>
+<p align="center">图21：Type 1虚拟化系统软件栈与异常级别</p>
+<br>
+
+然而，对于一个Type 2类型的系统，其软件栈与异常级别的对应关系可能如图22所示
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/22 Hosted hypervisor pre VHE.png"/></div>
+<p align="center">图22：VHE之前的Type 2虚拟化系统软件栈与异常级别</p>
+<br>
+
+通常，寄主操作系统的内核部分运行在EL1，控制虚拟化的部分运行在EL2。然而，这种设计有一个明显的问题。VHE之前的Hypervisor通常需要设计成high-visor和low-visor两部分，前者运行在EL1，后者运行在EL2。分层设计在系统运行时会造成很多不必要的上下文切换，带来不少设计上的复杂性和性能开销。为了解决这个问题，虚拟化主机扩展 （Virtualization Host Extensions, VHE）应运而生。该特性由Armv8.1-A引入，可以让寄主操作系统的内核部分直接运行于EL2。
+
+<br>
+### 将主机操作系统运行在EL2
+<br>
+
+VHE由系统寄存器 **HCR_EL2**中的两个比特位控制
+<br>
+- **E2H**：VHE使能位
+- **TGE**：当VHE使能时，控制EL0时Guest还是Host
+<br>
+
+```
+|         Running in        | E2H | TGE |
+|---------------------------|-----|-----|
+|Guest kernel (EL1)         |  1  |  0  |
+|Guest application (EL0)    |  1  |  0  | 
+|Host kernel (EL2)          |  1  |  1* |
+|Host application (EL0)     |  1  |  1  |
+```
+**\*** 当发生异常从VM退出到Hypervisor时，TGE将会初始化为0，软件需要先设置这一比特，再继续运行host kernel的主代码
+
+<br>
+一个典型的配置如下图
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/23 E2H and TGE combinations.png"/></div>
+<p align="center">图23：E2H与TGE配置</p>
+<br>
+
+### 虚拟地址空间
+<br>
+在VHE引入之前，EL0/1的虚拟地址空间看起来如下。EL0/1由两块区域，上面是内核空间，下面为用户空间。EL2只有一个空间，Hypervisor通常不需要运行应用，因此没有必要划分内核与用户空间。同理，EL0/1虚拟地址空间支持ASID，但EL2不需要支持。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/24 The EL01 and EL2 virtual address spaces pre VHE.png"/></div>
+<p align="center">图24：VHE之前的虚拟地址空间</p>
+<br>
+
+当VHE引入之后，EL2可以直接运行操作系统代码。因此需要将地址空间划分和ASID的支持添加进来。同样，通过设置 **HCR_EL2.E2H**来解决。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/25 EL02 virtual address space when E2H 1.png"/></div>
+<p align="center">图25：开启E2H时的EL2虚拟地址空间</p>
+<br>
+
+当运行在EL0时，HCR_EL2.TGE控制使用EL1还是EL2空间，当应用运行在Guest OS (TGE==0)为前者，运行在Host OS（TGE==1）为后者。
+
+<br>
+### 重定向寄存器访问
+<br>
+
+除了会使用不同的地址空间映射，VHE还由一个问题需要解决，那就寄存器访问。运行在EL2的内核仍然会尝试访问*_EL1的寄存器。为了运行无需修改的内核，我们需要将EL1的寄存器重定向到EL2。当你设置E2H后，这一切就会由硬件实现。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/26 The effect of E2H on system registers access at EL2.png"/></div>
+<p align="center">图26：E2H对系统寄存器访问的影响</p>
+<br>
+
+但是，重定向又会带来一个新的问题，那就是Hypervisor完全可能在某些情况下，例如当执行任务切换时， 访问真正EL1的寄存器。为了解决这个问题，Arm架构引入了一种新的别名机制，以_EL12或_EL02结尾。如下例，就可以在ECH==1的EL2访问TTBR0_EL1。
+
+<br>
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/27 Access EL1 registers from EL2 when E2H 1.png"/></div>
+<p align="center">图27：从EL2访问EL1寄存器</p>
+<br>
+
+### 异常
+
+通常系统寄存器 **HCR_EL2.IMO/FMO/AMO**的比特位控制物理异常被路由至EL1还是EL2。当运行在EL0且TGE==1时，HCR_EL2路由比特将会被忽略，所有物理异常（除了那些由SCR_EL3控制会被路由至EL3的异常）全部路由到EL2。这是因为Host OS里运行的应用是Host OS的一部分，而Host OS运行在EL2。
+
+<br>
+## 2.7 嵌套虚拟化
+<br>
+
+Hypervisor可以运行在VM中，这称之为嵌套虚拟化。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/28 Nested virtualization.png"/></div>
+<p align="center">图28：嵌套虚拟化</p>
+<br>
+
+我们将第一个Hypervisor称为Host Hypervisor，VM中运行的Hypervisor称为Guest Hypervisor。
+
+<br>
+在Armv8.3-A之前，Guest Hypervisor可以运行在EL0。但这种设计需要大量软件模拟，不仅软件开发困难，性能也很差。Armv8.3-A增加了一些新的特性，可以让Guest Hypervisor运行在EL1。而Armv8.4-A引入的一些新特性，使得这以过程更有效率，虽然仍然需要Host Hypervisor参与做一些额外的工作。
+
+<br>
+### Guest Hypervisor访问虚拟化控制接口
+<br>
+
+我们不会希望看到Guest Hypervisor能直接访问虚拟化控制接口，这么做会破坏VM的沙箱机制，使得虚拟机能够看到Host平台的信息。当Guest Hypervisor运行在EL1，并访问虚拟化控制接口时，**HCR_EL2**中新的控制比特位可以使这些操作陷入到Host Hypervisor以便模拟。
+
+<br>
+
+- **HCR_EL2.NV**：开启硬件辅助嵌套虚拟化
+- **HCR_EL2.NV1**：开启额外需要陷入的操作
+- **HCR_EL2.NV2**：开启重定向到内存
+- **VNCR_EL2**：当NV2==1时，指向一个内存中的结构体
+
+Armv8.3-A添加了NV和NV1控制比特。在此之前，从EL1访问*_EL2寄存器的行为时未定义的，通常会产生一个EL1的异常。而控制比特NV和NV1使得这种访问会被陷入到EL2。这就使得Guest Hypervisor可以运行在EL1，同时由运行在EL2的Host Hypervisor来模拟这些操作。NV还会导致EL1运行ERET陷入到EL2。
+
+<br>
+下图展示了Guest Hypervisor如何创建并启动虚拟机
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/29 Guest Hypervisor setting up and entering a VM.png"/></div>
+<p align="center">图29：Guest Hypervisor创建并启动虚拟机</p>
+<br>
+
+1. 从EL1访问*_EL2寄存器将导致Guest Hypervisor陷入到EL2。Host Hypervisor记录Guest Hypervisor创建的相关配置。
+2. Guest Hypervisor尝试进入其创建的虚拟机，此时ERET指令会陷入到EL2。
+3. Host Hypervisor根据记录的配置相关寄存器，清理调NV比特位，而后进入Guest Hypervisor创建的Guest运行。
+
+<br>
+
+按上述的方法， 在Guest Hypervisor访问任何一个*_EL2寄存器时都会发生陷入。切换操作如 任务切换，vCPU切换，VMs切换都会访问大量寄存器，每次陷入都会导致异常的进入与返回，从而带来严重的 **陷入 -- 模拟**性能问题。（回忆前面的内容， **虚拟化性能提升的关键就在优化陷入，减少次数，优化流程**）。一个更好的方案是俘获EL2配置寄存器，仅仅当Guest Hypervisor执行ERET时才陷入模拟。
+
+<br>
+## 2.8 安全状态虚拟化
+<br>
+
+<br>
+# 3 虚拟化的成本损耗
+<br>
 
 <br>
 <br>
