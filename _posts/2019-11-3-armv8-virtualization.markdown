@@ -484,7 +484,7 @@ Hypervisor可以运行在VM中，这称之为嵌套虚拟化。
 ### Guest Hypervisor访问虚拟化控制接口
 <br>
 
-我们不会希望看到Guest Hypervisor能直接访问虚拟化控制接口，这么做会破坏VM的沙箱机制，使得虚拟机能够看到Host平台的信息。当Guest Hypervisor运行在EL1，并访问虚拟化控制接口时，**HCR_EL2**中新的控制比特位可以使这些操作陷入到Host Hypervisor以便模拟。
+我们不希望Guest Hypervisor能直接访问虚拟化控制接口，因为这么做会破坏VM的沙箱机制，使得虚拟机能够看到Host平台的信息。当Guest Hypervisor运行在EL1，并访问虚拟化控制接口时，**HCR_EL2**中新的控制比特位可以使这些操作陷入到Host Hypervisor以便模拟。
 
 <br>
 
@@ -493,7 +493,7 @@ Hypervisor可以运行在VM中，这称之为嵌套虚拟化。
 - **HCR_EL2.NV2**：开启重定向到内存
 - **VNCR_EL2**：当NV2==1时，指向一个内存中的结构体
 
-Armv8.3-A添加了NV和NV1控制比特。在此之前，从EL1访问*_EL2寄存器的行为时未定义的，通常会产生一个EL1的异常。而控制比特NV和NV1使得这种访问会被陷入到EL2。这就使得Guest Hypervisor可以运行在EL1，同时由运行在EL2的Host Hypervisor来模拟这些操作。NV还会导致EL1运行ERET陷入到EL2。
+Armv8.3-A添加了NV和NV1控制比特。在此之前，从EL1访问*_EL2寄存器的行为时未定义的，通常会产生一个EL1的异常。而控制比特NV和NV1使得这种访问可以被陷入到EL2。这就使得Guest Hypervisor可以运行在EL1，同时由运行在EL2的Host Hypervisor来模拟这些操作。NV还会导致EL1运行ERET陷入到EL2。
 
 <br>
 下图展示了Guest Hypervisor如何创建并启动虚拟机
@@ -505,23 +505,66 @@ Armv8.3-A添加了NV和NV1控制比特。在此之前，从EL1访问*_EL2寄存�
 
 1. 从EL1访问*_EL2寄存器将导致Guest Hypervisor陷入到EL2。Host Hypervisor记录Guest Hypervisor创建的相关配置。
 2. Guest Hypervisor尝试进入其创建的虚拟机，此时ERET指令会陷入到EL2。
-3. Host Hypervisor根据记录的配置相关寄存器，清理调NV比特位，而后进入Guest Hypervisor创建的Guest运行。
+3. Host Hypervisor根据Guest Hypervisor的配置，设置相关寄存器以便启动VM，清理掉NV比特位，而后进入Guest Hypervisor创建的Guest运行。
 
 <br>
 
-按上述的方法， 在Guest Hypervisor访问任何一个*_EL2寄存器时都会发生陷入。切换操作如 任务切换，vCPU切换，VMs切换都会访问大量寄存器，每次陷入都会导致异常的进入与返回，从而带来严重的 **陷入 -- 模拟**性能问题。（回忆前面的内容， **虚拟化性能提升的关键就在优化陷入，减少次数，优化流程**）。一个更好的方案是俘获EL2配置寄存器，仅仅当Guest Hypervisor执行ERET时才陷入模拟。
+按上述的方法， 在Guest Hypervisor访问任何一个\*_EL2寄存器时都会发生陷入。切换操作如 任务切换，vCPU切换，VMs切换都会访问大量寄存器，每次陷入都会导致异常的进入与返回，从而带来严重的 **陷入 -- 模拟**性能问题。（回忆前面的内容， **虚拟化性能提升的关键就在优化陷入，减少次数，优化流程**）。Armv8.4-A提供了一个更好的方案，俘获EL2配置寄存器，仅仅当Guest Hypervisor执行ERET时才陷入模拟。当NV2被设置时，从EL1访问\*_EL2寄存器将会被重定向到一块内存区域。Guest Hypervisor可以多次读写这块寄存器区域而不发生陷入。只有当运行ERET时，才会陷入到EL2。此时，Host Hypervisor可以从内存区域中提取配置。
 
 <br>
-## 2.8 安全状态虚拟化
+<div align="center"><img src="/assets/images/armv8_virtualization/30 ERET still traps to EL2.png"/></div>
+<p align="center">图30：Guest Hypervisor创建并启动虚拟机优化</p>
+<br>
+
+1.  从EL1访问*_EL2寄存器将会被重定向到一块内存区域，该内存区域的地址由Host Hypervisor在 **VNCR_EL2**中指定。
+2.  Guest Hypervisor尝试进入其创建的虚拟机，此时ERET指令会陷入到EL2
+3.  Host Hypervisor从内存中提取配置信息，设置相关寄存器，以便启动VM，清理掉NV比特位，而后进入Guest Hypervisor创建的Guest运行。
+
+<br>
+这个改进方法相比之前的方法会减少陷入到Host Hypervisor的次数，从而提升了性能。
+
+<br>
+## 2.8 安全世界虚拟化
+<br>
+
+虚拟化扩展最早是在Armv7-A引入的。在Armv7-A中的Hyp模式等同于AArch32中的EL2，仅仅在非安全世界才存在。作为一个可选特性，Armv8.4-A增加了安全世界下EL2的支持。支持安全世界EL2的处理器，需配置EL3下的SCR_EL3.EEL2比特位来开启这一特性。设置了这一比特位，才允许使用安全状态下的虚拟化功能。
+
+<br>
+在安全世界虚拟化之前，EL3通常用于运行安全状态切换软件和平台固件。我们希望EL3中运行的软件越少越好，因为越简单才会更安全。安全状态虚拟化使得我们可以将平台固件移到EL1中运行，由虚拟化来隔离平台固件和可信操作系统内核。下图展示了这一理念
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/31 Secure virtualization.png"/></div>
+<p align="center">图31：安全世界的虚拟化</p>
+<br>
+
+### 安全EL2与两个IPA空间
+<br>
+
+Arm体系结构定义了安全世界和非安全世界两个物理地址空间。在非安全状态下，stage 1转换的的输出总是非安全的，因此只需要一个IPA空间来给stage 2使用。然而，对于安全世界，stage 1的输出可能时安全的也能是非安全的。Stage 1转换表中的NS比特位控制使用安全地址还是非安全地址。这意味着在安全世界，有两个IPA地址空间。
+
+<br>
+<div align="center"><img src="/assets/images/armv8_virtualization/32 IPA spaces in Secure state.png"/></div>
+<p align="center">图32：安全世界的IPA地址空间</p>
+<br>
+
+与stage 1表不同，stage 2转换表中没有NS比特位。因为对于一个特定的IPA空间，要么全都是安全地址，要么全都是非安全的，因此只需要由一个寄存器比特位来确定IPA空间。通常来说，非安全地址经过stage 2转换仍然是非安全地址，安全地址经过stage 2转换仍然是安全地址。
+
 <br>
 
 <br>
-# 3 虚拟化的成本损耗
+# 3 虚拟化的损耗
 <br>
 
+虚拟化的损耗主要在于虚拟机和Hypervisor切换需要保存和恢复的寄存器。Armv8系统中，最少需要对如下寄存器做处理
+
+- 31 x 64-bit通用寄存器(x0...x30)
+- 32 x 128-bit浮点/SIMD寄存器(V0...V31)
+- 两个栈寄存器(SP_EL0, SP_EL1)
+  
+使用LDP和STP指令，Hypervisor需要运行33条指令来存储和恢复这些寄存器。虚拟化最终的损耗不仅取决于硬件还取决于Hypervisor的设计。
+
+
 <br>
-<br>
-...待续
 
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
