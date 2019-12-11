@@ -33,6 +33,27 @@ $nav-bar-icon-bar: $main-color;
 $nav-bar-brand-color: #fff;
 $nav-bar-brand-hover-color: $link-color-1;
 
+/* table */
+$spacing-unit:     30px !default;
+$table-text-align: left !default;
+
+$brand-color:           #828282 !default;
+$brand-color-light:     lighten($brand-color, 40%) !default;
+$brand-color-dark:      darken($brand-color, 25%) !default;
+
+$text-color:            #111 !default;
+$background-color:      #fdfdfd !default;
+$code-background-color: #eef !default;
+
+$link-base-color:       #2a7ae2 !default;
+$link-visited-color:    darken($link-base-color, 15%) !default;
+
+$table-text-color:      lighten($text-color, 18%) !default;
+$table-zebra-color:     lighten($brand-color, 46%) !default;
+$table-header-bg-color: lighten($brand-color, 43%) !default;
+$table-header-border:   lighten($brand-color, 36%) !default;
+$table-border-color:    $brand-color-light !default;
+
 
 @import 
     "xixia/theme",
