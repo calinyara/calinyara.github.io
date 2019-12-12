@@ -38,8 +38,8 @@ description:
 | virtio-mei      | Y    | N      | No (acrn-kernel)            | Intel Management Engine Interface.                           |
 | virtio-ipu      | Y    | N      | No (acrn-kernel)            | Imaging Processing Unit.                                     |
 | virtio-hyperdma | Y    | N      | No (acrn-kernel)            | Hyper DMA buffer.                                            |
-| virtio-hdpc     | Y    | N      | No (FE is AaaG Application) | High-bandwidth Digital Content Protection.                   |
-| virtio-coreu    | Y    | N      | No (FE is AaaG Application) | PAVP ( Protected Audio Video Path) session management.       |
+| virtio-hdpc     | Y    | N      | No												  | High-bandwidth Digital Content Protection.                   |
+| virtio-coreu    | Y    | N      | No                          | PAVP ( Protected Audio Video Path) session management.       |
 
 <br>
 
