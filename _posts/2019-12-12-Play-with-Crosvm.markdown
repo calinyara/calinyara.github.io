@@ -21,7 +21,7 @@ description:
 
 ```shell
 sudo apt-get install -y libcap-dev libfdt-dev
-curl [https://sh.rustup.rs](https://sh.rustup.rs/) -sSf | sh
+curl https://sh.rustup.rs -sSf | sh
 source $HOME/.cargo/env 
 ```
 
