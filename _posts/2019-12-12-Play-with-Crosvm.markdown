@@ -79,3 +79,13 @@ crosvm run --disable-sandbox --rwroot rootfs.ext4 -s crosvm.sock bzImage
 crosvm stop crosvm.sock
 ```
 <br>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-66555622-4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-66555622-4');
+</script>
