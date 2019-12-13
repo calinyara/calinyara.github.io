@@ -7,7 +7,13 @@ author: Calinyara
 description: 
 ---
 
-# **Play with Crosvm**
+<br>
+
+### **Background**
+
+<br>
+
+[**Crosvm**](https://chromium.googlesource.com/chromiumos/platform/crosvm/) is a device model based on [**Rust**](https://www.rust-lang.org/) language. [**Chrome OS**](https://www.chromium.org/chromium-os) uses **Crosvm** along with **KVM** to provide virtualization solution.
 
 <br>
 
