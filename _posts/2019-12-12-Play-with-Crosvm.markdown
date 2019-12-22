@@ -67,13 +67,13 @@ Compiled **bzImage** and **rootfs.ext4** will be located in output/images.
 
 ### **Try Crosvm**
 
-*// Start a VM, login with root without password*
+*Start a VM, login with root without password*
 
 ```shell
 crosvm run --disable-sandbox --rwroot rootfs.ext4 -s crosvm.sock bzImage
 ```
 
-*// Stop the VM, in another shell window run following command*
+*Stop the VM, in another shell window run following command*
 
 ```shell
 crosvm stop crosvm.sock
