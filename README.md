@@ -5,3 +5,4 @@
 - [3] [Armv8架构虚拟化介绍](https://calinyara.github.io/technology/2019/11/03/armv8-virtualization.html)
 - [4] [Virtio Devices in Crosvm vs ACRN](https://calinyara.github.io/technology/2019/12/10/virtio-devices-in-crosvm-vs-ACRN.html)
 - [5] [Play with Crosvm](https://calinyara.github.io/technology/2019/12/12/Play-with-Crosvm.html)
+- [6] [轻量级虚拟化解决方案](https://calinyara.github.io/technology/2020/01/09/Lightweight-virtualization-solutions.html)
