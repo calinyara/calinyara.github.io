@@ -1,0 +1,36 @@
+---
+layout: post
+title:  "SYSLOAD: 一个基于减法的系统占用率统计工具"
+categories: Technology
+tags: CPU占用率 top htop 系统占用率 性能分析 sysload 占用率
+author: Calinyara
+description:
+---
+
+<br>
+
+**top / htop** 等CPU占用率查看工具是通过累计系统时钟中断tick数目的方法来实现的。当在一个时钟中断周期内(1/Hz) 发生了多次进程调度的时候，这种 “**加法**” 的统计方法就会变得不准确。
+
+<br>
+
+<div align="center"><img src="/assets/images/20200407-sysload/Picture1.png"/></div>
+<p align="center">图1: CPU占用统计不准确的例子</p>
+<br>
+
+按照Linux内核CPU占用率的“**加法**” 方法。在上面例子的第1次和第2次时钟中断期间，内核漏掉了进程**B**的运行。在第2次和第3次中断期间，内核又漏掉了进程**A**的运行。
+
+<br>
+
+[**SYSLOAD**](https://github.com/calinyara/sysload) 是一个基于**RUST**语言编写的工具。其设计是基于 "**减法**"原理。**SYSLOAD**会在系统中每个CPU上运行一个“浸泡”线程，占据全部CPU。当有某些workloads被调度运行时，CPU算力被从这些“浸泡”线程让渡。“浸泡”线程所减少的CPU占用则为这些workloads实际占用的CPU资源。该测量方法十分精确，有效地避免了 **调度时间间隔小于系统时钟中断间隔**造成的统计不准确。
+
+<br>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-66555622-4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-66555622-4');
+</script>
