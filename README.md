@@ -7,3 +7,4 @@
 - [5] [Play with Crosvm](https://calinyara.github.io/technology/2019/12/12/Play-with-Crosvm.html)
 - [6] [轻量级虚拟化解决方案](https://calinyara.github.io/technology/2020/01/09/Lightweight-virtualization-solutions.html)
 - [7] [vWiFi - A Scalable WiFi Virtualization Solution](https://calinyara.github.io/technology/2020/03/18/vWiFi-A-Scalable-WiFi-Virtualization-Solution.html)
+- [8] [SYSLOAD: 一个基于减法的系统占用率统计工具](https://calinyara.github.io/technology/2020/04/07/sysload.html)
