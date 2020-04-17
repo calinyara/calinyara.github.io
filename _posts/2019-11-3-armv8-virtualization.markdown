@@ -21,7 +21,7 @@ description:
 ## 虚拟化为什么重要
 <br>
 
-虚拟化一种在现代云计算和企业基础架构中广泛使用的技术。开发人员用虚拟机在一个硬件平台上运行多个不同的操作系统来开发和测试软件，以避免对主计算环境造成可能的破坏。虚拟化技术在服务器上非常流行，大多数面向服务器的处理器都需要支持虚拟化功能，这是因为虚拟化能给数据中心服务器带来如下一些需要的特性：
+虚拟化是一种在现代云计算和企业基础架构中广泛使用的技术。开发人员用虚拟机在一个硬件平台上运行多个不同的操作系统来开发和测试软件，以避免对主计算环境造成可能的破坏。虚拟化技术在服务器上非常流行，大多数面向服务器的处理器都需要支持虚拟化功能，这是因为虚拟化能给数据中心服务器带来如下一些需要的特性：
 
 - **隔离**：利用虚拟化可以对同一个物理核上运行的虚拟机进行隔离。这使得相互间不可信的的计算环境可以共享同一套硬件环境。例如，两个竞争对手可以共享同一个物理机器而又不能访问对方的数据。
 - **高可用性**： 虚拟化可以在不同的物理机器之间无缝透明地迁移负载。这个技术广泛用于将负载从出错的硬件平台迁移至其他可用平台，以便维护和替换出错的硬件而不影响服务。
@@ -37,7 +37,6 @@ Hypervisor通常被分成两种类型，独立类型Type 1和寄生类型 Type 2
 <br>
 <div align="center"><img src="/assets/images/armv8_virtualization/1 Example of a hosted or Type 2 hypervisor.png"/></div>
 <p align="center">图1：Type 2 Hypervisor</p>
-
 <br>
 宿主操作系统，指的是直接运行在硬件平台上并为Type 2类型的Hypervisor提供运行环境的操作系统。这类Hypervisor可以充分利用宿主操作系统对物理硬件的管理功能，而Hypervisor只需提供虚拟化相关功能即可。不知你是否使用过Virtual Box或是VMware Workstation, 这类软件就是Type 2类型的Hypervisor。
 
@@ -48,7 +47,6 @@ Hypervisor通常被分成两种类型，独立类型Type 1和寄生类型 Type 2
 <br>
 <div align="center"><img src="/assets/images/armv8_virtualization/2 Example of a standalone or Type 1 hypervisor.png"/></div>
 <p align="center">图2：Type 1 Hypervisor</p>
-
 <br>
 在开源社区常见的Hypervisor, Xen (Type 1) 和 KVM (Type 2)就分属这两种不同的类型。其他开源的或知识产权的Hypervisor，可参见 [WiKi](https://en.wikipedia.org/wiki/Comparison_of_platform_virtualization_software)。
 
@@ -106,7 +104,6 @@ stage 2转换表的格式和stage 1的类似，但也有些属性的处理不太
 <br>
 <div align="center"><img src="/assets/images/armv8_virtualization/5 VA to IPA to PA address translation.png"/></div>
 <p align="center">图5：地址转换, VA to IPA to PA</p>
-
 <br>
 ### VMID
 <br>
@@ -126,7 +123,6 @@ stage 1 和 stage 2映射都包含属性，例如存储类型，访问权限等�
 <br>
 <div align="center"><img src="/assets/images/armv8_virtualization/6 Combining stage 1 and stage 2 attributes.png"/></div>
 <p align="center">图6：映射属性整合</p>
-
 在上面的例子中，Device属性比起Normal属性更具限制性，因此最终结果是Device属性。同样的原理，如果你将顺序调换一下也不会改变最终的属性。
 
 <br>
@@ -145,14 +141,12 @@ stage 1 和 stage 2映射都包含属性，例如存储类型，访问权限等�
 <br>
 <div align="center"><img src="/assets/images/armv8_virtualization/7 Emulating IMMO new.png"/></div>
 <p align="center">图7：模拟MMIO</p>
-
 <br>
 VM使用外围设备区域来访问其看到的物理外围设备，这其中包含了直通设备和虚拟外围设备。虚拟设备完全由Hypervisor模拟，如下图所示
 
 <br>
 <div align="center"><img src="/assets/images/armv8_virtualization/8 Stage 2 mappings for virtual and assigned peripherals.png"/></div>
 <p align="center">图8：stage 2映射</p>
-
 <br>
 
 一个直通设备被直接分配给VM并映射到IPA地址空间，这使得VM中的软件可用直接访问真实的物理硬件。一个虚拟的外围设备由Hypervisor模拟，其stage 2的转换项被标记为fault。虽然VM中的软件看来其是直接与物理设备交互，但实际上这一访问会导致stage 2转换fault，从而进入相应的异常处理程序由Hypervisor模拟。
@@ -170,7 +164,6 @@ ESR_ELx寄存器用于报告发生异常的相关信息。当loads或stores一�
 <br>
 <div align="center"><img src="/assets/images/armv8_virtualization/9 Example of emulating an access to MMIO.png"/></div>
 <p align="center">图9：外围设备模拟</p>
-
 1. VM里的软件尝试访问虚拟外围设备，这个例子当中是虚拟UART的接收FIFO。
 2. 该访问被stage 2转换block住，导致一个abort异常被路由到EL2。
    - 异常处理程序查询ESR_EL2关于异常的信息，如访问长度，目的寄存器，是load还是store操作。
@@ -462,7 +455,7 @@ VHE由系统寄存器 **HCR_EL2**中的两个比特位控制
 
 ### 异常
 
-通常系统寄存器 **HCR_EL2.IMO/FMO/AMO**的比特位控制物理异常被路由至EL1还是EL2。当运行在EL0且TGE==1时，HCR_EL2路由比特将会被忽略，所有物理异常（除了那些由SCR_EL3控制的会被路由至EL3）全部路由到EL2。这是因为Host OS里运行的应用是Host OS的一部分，而Host OS运行在EL2。
+通常系统寄存器 **HCR_EL2.IMO/FMO/AMO**的这几个比特位可以用来控制物理异常被路由至EL1或EL2。当运行在EL0且TGE==1时，HCR_EL2路由比特将会被忽略，所有物理异常（除了那些由SCR_EL3控制的会被路由至EL3）全部路由到EL2。这是因为Host OS里运行的应用是Host OS的一部分，而Host OS运行在EL2。
 
 <br>
 ## 2.7 嵌套虚拟化
@@ -561,6 +554,7 @@ Arm体系结构定义了安全世界和非安全世界两个物理地址空间�
 - 32 x 128-bit浮点/SIMD寄存器(V0...V31)
 - 两个栈寄存器(SP_EL0, SP_EL1)
   
+
 使用LDP和STP指令，Hypervisor需要运行33条指令来存储和恢复这些寄存器。虚拟化最终的损耗不仅取决于硬件还取决于Hypervisor的设计。
 
 
