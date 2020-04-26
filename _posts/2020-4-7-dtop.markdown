@@ -23,6 +23,8 @@ description:
 
 [**dtop**](https://github.com/calinyara/dtop) 是一个基于**RUST**语言编写的工具。其设计是基于 "**减法**"原理。**dtop**会在系统中每个CPU上运行一个“浸泡”线程，占据全部CPU。当有某些workloads被调度运行时，CPU算力被从这些“浸泡”线程让渡。“浸泡”线程所减少的CPU占用则为这些workloads实际占用的CPU资源。该测量方法十分精确，有效地避免了 **调度时间间隔小于系统时钟中断间隔**造成的统计不准确。
 
+[**下载**](https://github.com/calinyara/dtop/releases)
+
 <br>
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
