@@ -33,7 +33,7 @@
 <div class="sidebar well">
     <h1>{{ trans.recent_posts }}</h1>
     <ul>
-        {% for post in site.posts limit:5 %}
+        {% for post in site.posts limit:36 %}
           <li><a href="{{ site.baseurl}}{{ post.url }}">{{ post.title }}</a></li>
         {% endfor %}
     </ul>
