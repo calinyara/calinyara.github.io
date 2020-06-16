@@ -35,7 +35,7 @@ description:
 
 [**NEMU**](https://github.com/intel/nemu)的设计初衷与[**cloud-hypervisor**](https://github.com/cloud-hypervisor/cloud-hypervisor)相同，只不过实现手段不同，其通过基于**QEMU**做减法来实现。
 
-基于容器的虚拟化技术属于操作系统层面的虚拟化，相较于上述硬件层面的虚拟化技术，其优势在于性能非常好，劣势也很明显，隔离性较低，安全性差，容易被攻击。[**gVisor**](https://github.com/google/gvisor)和[**Kata Containers**](https://github.com/kata-containers)瞄准解决的正是这一问题。虽然二者在具体的技术实现上不同，但主要手段是一样的，简单的说就是虚拟机里跑容器，通过两层虚拟化增加隔离，然后在此基础上想办法通过一些手段优化性能。
+基于容器的虚拟化技术属于操作系统层面的虚拟化，相较于上述硬件层面的虚拟化技术，其优势在于性能非常好，劣势也很明显，隔离性较低，安全性差，容易被攻击。[**gVisor**](https://github.com/google/gvisor) 和[**Kata Containers**](https://github.com/kata-containers)瞄准解决的正是容器安全性这一问题。虽然二者在具体的技术实现上有些不同（前者通过隔离系统调用，后者通过增加一个轻量级虚拟机隔离层），但本质是一样的，通过两层隔离增加安全性，然后在此基础上想办法通过一些手段优化性能。
 
 <br>
 
