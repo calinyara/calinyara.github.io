@@ -318,7 +318,7 @@ Hypervisor可能希望在访问上述两个寄存器时不要总是陷入。对�
 - 对EL0/EL1开启vIRQs
 <br>
 
-这同时也改变了PSTATE.I 屏蔽的含义， 当运行在EL0/EL1是，如果 HCR_E2.IMO==1, PSTATE.I针对的是虚拟的vIRQs而物理的pIRQs。
+这同时也改变了PSTATE.I 屏蔽的含义， 当运行在EL0/EL1是，如果 HCR_E2.IMO==1, PSTATE.I针对的是虚拟的vIRQs而非物理的pIRQs。
 
 <br>
 ## 2.5 时钟虚拟化
@@ -533,7 +533,7 @@ Armv8.3-A添加了NV和NV1控制比特。在此之前，从EL1访问*_EL2寄存�
 ### 安全EL2与两个IPA空间
 <br>
 
-Arm体系结构定义了安全世界和非安全世界两个物理地址空间。在非安全状态下，stage 1转换的的输出总是非安全的，因此只需要一个IPA空间来给stage 2使用。然而，对于安全世界，stage 1的输出可能时安全的也能是非安全的。Stage 1转换表中的NS比特位控制使用安全地址还是非安全地址。这意味着在安全世界，需要两个IPA地址空间。
+Arm体系结构定义了安全世界和非安全世界两个物理地址空间。在非安全状态下，stage 1转换的的输出总是非安全的，因此只需要一个IPA空间来给stage 2使用。然而，对于安全世界，stage 1的输出可能是安全的也能是非安全的。Stage 1转换表中的NS比特位控制使用安全地址还是非安全地址。这意味着在安全世界，需要两个IPA地址空间。
 
 <br>
 <div align="center"><img src="/assets/images/armv8_virtualization/32 IPA spaces in Secure state.png"/></div>
