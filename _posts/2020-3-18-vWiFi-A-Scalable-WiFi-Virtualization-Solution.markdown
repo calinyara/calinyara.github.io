@@ -1,8 +1,8 @@
 ---
 layout: post
-title:  "vWiFi - A Scalable WiFi Virtualization Solution"
+title:  "vWiFi - A Scalable and Software Defined WiFi Virtualization Solution"
 categories: Technology
-tags: Virtualization WiFi hypervisor datacenter 802.11 scalability firmware vWiFi
+tags: Virtualization WiFi hypervisor datacenter 802.11 scalability firmware vWiFi software-defined
 author: Calinyara
 description:
 ---
@@ -22,7 +22,20 @@ Virtualization which is a technology widely used  in cloud computing data center
 - *Virtual Machines in the same physical machine can share the same WiFi device. Each virtual machine can have full wireless capability just like working on a physical WiFi device and independently configure their working WiFi channels without influencing each other.*
 - *Dozens of WiFi access points can be hosted in one WiFi router without influencing each other.*
 
-All these can help to build a modern **wireless data center** and save hardware costs.
+<br>
+
+Let's see some cases in Figure 1:
+
+<div align="center"><img src="/assets/images/20200318-vWiFi/example1.png"/></div>
+<br>
+<p align="center">Figure 1a: Software Defined vWiFi on  Virtualization WiFi Chip</p>
+<br>
+<div align="center"><img src="/assets/images/20200318-vWiFi/example2.png"/></div>
+<br>
+<p align="center">Figure 1b: Software Defined vWiFi on  Virtualization WiFi Chip</p>
+<br>
+
+To sum up, we may need a **software-definable virtualization WiFi chip** to instead of traditional WiFi chip for better scalability, which can help to build a modern **wireless data center** and save hardware costs.
 
 <br>
 
@@ -35,7 +48,7 @@ All these can help to build a modern **wireless data center** and save hardware 
 <br>
 
 <div align="center"><img src="/assets/images/20200318-vWiFi/Picture1.png"/></div>
-<p align="center">Figure 1: Traditional WiFi Stack without Virtualization</p>
+<p align="center">Figure 2: Traditional WiFi Stack without Virtualization</p>
 <br>
 
 **Characteristics:**
@@ -50,7 +63,7 @@ All these can help to build a modern **wireless data center** and save hardware 
 <br>
 
 <div align="center"><img src="/assets/images/20200318-vWiFi/Picture2.png"/></div>
-<p align="center">Figure 2: Ethernet Emulation</p>
+<p align="center">Figure 3: Ethernet Emulation</p>
 <br>
 
 **Characteristics:**
@@ -65,7 +78,7 @@ All these can help to build a modern **wireless data center** and save hardware 
 <br>
 
 <div align="center"><img src="/assets/images/20200318-vWiFi/Picture3.png"/></div>
-<p align="center">Figure 3: Wireless Emulation</p>
+<p align="center">Figure 4: Wireless Emulation</p>
 <br>
 
 **Characteristics:**
@@ -80,7 +93,7 @@ All these can help to build a modern **wireless data center** and save hardware 
 <br>
 
 <div align="center"><img src="/assets/images/20200318-vWiFi/Picture4.png"/></div>
-<p align="center">Figure 4: Wireless Direct Pass-Though</p>
+<p align="center">Figure 5: Wireless Direct Pass-Though</p>
 <br>
 
 **Characteristics:**
@@ -99,7 +112,7 @@ All these can help to build a modern **wireless data center** and save hardware 
 <br>
 
 <div align="center"><img src="/assets/images/20200318-vWiFi/Picture5.png"/></div>
-<p align="center">Figure 5: Wireless Mediated Pass-Through with WiFi SoC Chip Virtualization</p>
+<p align="center">Figure 6: Wireless Mediated Pass-Through with WiFi SoC Chip Virtualization</p>
 <br>
 
 **Characteristics:**
@@ -114,7 +127,7 @@ All these can help to build a modern **wireless data center** and save hardware 
 <br>
 
 <div align="center"><img src="/assets/images/20200318-vWiFi/Picture6.png"/></div>
-<p align="center">Figure 6: WiFi SoC Chip Virtualization</p>
+<p align="center">Figure 7: WiFi SoC Chip Virtualization</p>
 <br>
 
 - A tiny hypervisor (virtual machine monitor, VMM) runs in the physical CPUs of the WiFi SoC.
@@ -124,7 +137,7 @@ All these can help to build a modern **wireless data center** and save hardware 
 <br>
 
 <div align="center"><img src="/assets/images/20200318-vWiFi/Picture7.png"/></div>
-<p align="center">Figure 7: Wireless Mediated Pass-Through</p>
+<p align="center">Figure 8: Wireless Mediated Pass-Through</p>
 <br>
 
 - All Guest OS share the same SoC Physical WiFi Device (WiFi SoC Chip).
