@@ -107,8 +107,7 @@ The Fig.6 shows the page turning effect.
 <br>
 
 <div align="center">
-<video class="center" src="/assets/images/20200808-sliding-controlling-pen/demo.mp4" controls poster="/assets/images/20200808-sliding-controlling-pen/fig6.png" width="600">⁪</video>
-</div>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/PlXe1v7rUss" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 <p align="center">Demo</p>
 
 <br>

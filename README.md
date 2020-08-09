@@ -11,3 +11,4 @@
 - [9] [vWiFi - A Scalable WiFi Virtualization Solution](https://calinyara.github.io/technology/2020/03/18/vWiFi-A-Scalable-WiFi-Virtualization-Solution.html)
 - [10] [dtop: 一个基于减法的系统占用率及系统性能测量工具](https://calinyara.github.io/technology/2020/04/07/dtop.html)
 - [11] [基于树莓派搭建小型云计算集群](https://calinyara.github.io/technology/2020/06/08/raspberry-cluster.html)
+- [12] [Continuously Variable Sliding Pencil for E-book Page Turning](https://calinyara.github.io/technology/2020/08/08/continuously-variable-sliding-pen-for-ebook-page-turning.html)
