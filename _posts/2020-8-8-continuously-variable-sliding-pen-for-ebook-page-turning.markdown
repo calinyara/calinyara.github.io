@@ -23,6 +23,15 @@ This article elaborates a new screen contactless page turning pencil for E-book 
 
 <br>
 
+**Existing Solutions:**
+
+- Solution A: Sliding on the touch screen by using finger.
+- Solution B: Click and control the sliding bar using mouse.
+- Solution C: Press the keyboard direction buttons.
+- Solution D: Button control device based on Bluetooth. Press the button once, turn one whole page. 
+
+<br>
+
 Compared with the existing solutions, it has the following advantages:
 
 - Screen contactless. No need to touch the screen.
