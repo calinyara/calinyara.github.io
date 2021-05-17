@@ -13,3 +13,4 @@
 - [11] [基于树莓派搭建小型云计算集群](https://calinyara.github.io/technology/2020/06/08/raspberry-cluster.html)
 - [12] [Continuously Variable Sliding Pencil for E-book Page Turning](https://calinyara.github.io/technology/2020/08/08/continuously-variable-sliding-pen-for-ebook-page-turning.html)
 - [13] [GPU/显卡虚拟化](https://calinyara.github.io/technology/2021/03/14/gpu-virtualization.html)
+- [14] [Hardware-assisted IPI Virtualization](https://calinyara.github.io/technology/2021/05/15/ipi-virtualization.html)
