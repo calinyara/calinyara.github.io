@@ -47,6 +47,9 @@ Intel® Graphics Virtualization Technology -g (Intel® GVT-g)，虚拟图形处�
 <br>
 
 <div align="center"><img src="/assets/images/20210314-gpu-virtualization/fig2.png"/></div>
+
+<div align="center"><img src="/assets/images/20210314-gpu-virtualization/virtio-gpu.png"/></div>
+
 <p align="center">图2: 显卡虚拟化软件栈</p>
 <br>
 
