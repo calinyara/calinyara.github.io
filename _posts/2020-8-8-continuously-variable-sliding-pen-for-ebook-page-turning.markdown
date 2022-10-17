@@ -129,3 +129,14 @@ The Fig.6 shows the page turning effect.
   gtag('js', new Date());
   gtag('config', 'UA-66555622-4');
 </script>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-27WH7FZ7KT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-27WH7FZ7KT');
+</script>
