@@ -1,7 +1,9 @@
 # Jekyll configuration
 
 name: CALINYARA
-description:
+title: CALINYARA
+description: Welcome to CALINYARA
+author: calinyara
 
 # url is currently only used only for the RSS feed in feed.xml
 url: https://calinyara.github.io/
