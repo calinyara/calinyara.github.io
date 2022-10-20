@@ -14,3 +14,5 @@
 - [12] [Continuously Variable Sliding Pencil for E-book Page Turning](https://calinyara.github.io/technology/2020/08/08/continuously-variable-sliding-pen-for-ebook-page-turning.html)
 - [13] [GPU/显卡虚拟化](https://calinyara.github.io/technology/2021/03/14/gpu-virtualization.html)
 - [14] [Hardware-assisted IPI Virtualization](https://calinyara.github.io/technology/2021/05/15/ipi-virtualization.html)
+- [15] [编译一个最小可用Linux内核](https://calinyara.github.io/technology/2022/10/16/tiny-linux-kernel.html)
+- [16] [tiny_raspi: 用buildroot为树莓派制作最小内核](https://calinyara.github.io/technology/2022/10/20/tiny-raspi.html)
