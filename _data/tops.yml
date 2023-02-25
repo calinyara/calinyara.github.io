@@ -1,6 +1,6 @@
 - url: "armv8-virtualization"
+- url: "aVisor"
 - url: "raspberry-cluster"
-- url: "tiny-linux-kernel"
 - url: "ipi-virtualization"
 - url: "asor-hypervisor"
 - url: "dtop"

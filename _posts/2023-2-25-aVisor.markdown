@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "基于ARM的Hypervisor及操作系统实现"
+title:  "aVisor: 基于ARM架构的Hypervisor及操作系统实现"
 categories: Technology
 tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi buildroot hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm
 author: Calinyara
@@ -32,11 +32,11 @@ description:
 **控制台操作**
 
 上述demo，将在**aVisor**上运行3个虚拟机
-- **echo**:  一个baremetal二进制程序，用以回显键盘输入
+- **echo**:  一个baremetal二进制程序，可以回显键盘输入
 - **lrtos**: 一个微型操作系统，启动后运行两个用户态程序，一个打印“12345”， 另一个打印"abcde", 其内核支持简单调度
 - **uboot**: 标准的 Das U-Boot Bootloader
 
-启动后按回车进入aVisor控制台
+启动后按回车进入**aVisor**控制台
 
 ```
 help			// 打印帮助
@@ -47,7 +47,7 @@ vmc <vm id>		// 从Hypervisor控制台切换到VM控制台，例如：vmc 3，�
 
 <br>
 
-**物理版运行**
+**物理板运行**
 <br>
 <div align="center"><img src="/assets/images/20230225-aVisor/phy_board.png"/></div>
 <p align="center">图2：GPIO接线图</p>
@@ -61,7 +61,7 @@ vmc <vm id>		// 从Hypervisor控制台切换到VM控制台，例如：vmc 3，�
 
 <br>
 
-将*config.txt*, *bootcode.bin*, *start.elf*, *lrtos.bin*, *echo.bin*, *kernel8.img* 拷贝至SD卡，USB串口接电脑，即可通过串口访问aVisor。
+将*config.txt*, *bootcode.bin*, *start.elf*, *lrtos.bin*, *echo.bin*, *kernel8.img* 拷贝至SD卡，USB串口接电脑，即可通过串口访问**aVisor**。
 
 <br>
 
