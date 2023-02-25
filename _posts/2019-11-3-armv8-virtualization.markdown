@@ -10,7 +10,7 @@ description:
 # 1 综述
 
 <br>
-本文描述了Armv8-A AArch64的虚拟化支持。包括stage 2页表转换，虚拟异常，以及陷阱。本文介绍了一些基础的硬件辅助虚拟化理论以及一些Hypervisor如何利用这些虚拟化特性的例子。文本不会讲述某一具体的Hypervisor软件是如何工作的以及如何开发一款Hypervisor软件（对具体实现感兴趣，请参考[aVisor: 基于ARM的Hypervisor及操作系统实现](https://calinyara.github.io/technology/2023/02/25/aVisor.html)）。通过阅读本文，你可以学到两种类型的Hypervisor以及它们是如何映射到Arm的异常级别。你将能解释陷阱是如何工作的以及其是如何被用来进行各种模拟操作。你将能描述Hypervisor可以产生什么虚拟异常以及产生这些虚拟异常的机制。理解本文内容需要一定基础，本文假定你熟悉ARMv8体系结构的异常模型和内存管理。
+本文描述了Armv8-A AArch64的虚拟化支持。包括stage 2页表转换，虚拟异常，以及陷阱。本文介绍了一些基础的硬件辅助虚拟化理论以及一些Hypervisor如何利用这些虚拟化特性的例子。文本不会讲述某一具体的Hypervisor软件是如何工作的以及如何开发一款Hypervisor软件（对具体实现感兴趣，请参考[aVisor: 基于ARM架构的Hypervisor及操作系统实现](https://calinyara.github.io/technology/2023/02/25/aVisor.html)）。通过阅读本文，你可以学到两种类型的Hypervisor以及它们是如何映射到Arm的异常级别。你将能解释陷阱是如何工作的以及其是如何被用来进行各种模拟操作。你将能描述Hypervisor可以产生什么虚拟异常以及产生这些虚拟异常的机制。理解本文内容需要一定基础，本文假定你熟悉ARMv8体系结构的异常模型和内存管理。
 
 <br>
 # 1.1 虚拟化简介
