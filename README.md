@@ -16,4 +16,5 @@
 - [14] [Hardware-assisted IPI Virtualization](https://calinyara.github.io/technology/2021/05/15/ipi-virtualization.html)
 - [15] [编译一个最小可用Linux内核](https://calinyara.github.io/technology/2022/10/16/tiny-linux-kernel.html)
 - [16] [tiny_raspi: 用buildroot为树莓派制作最小内核](https://calinyara.github.io/technology/2022/10/20/tiny-raspi.html)
-- [17] [aVisor: 基于ARM的Hypervisor及操作系统实现](https://calinyara.github.io/technology/2023/02/25/aVisor.html)
+- [17] [ChatGPT虚拟机](https://calinyara.github.io/technology/2023/02/25/ChatGPT-vm.html)
+- [18] [aVisor: 基于ARM的Hypervisor及操作系统实现](https://calinyara.github.io/technology/2023/02/25/aVisor.html)
