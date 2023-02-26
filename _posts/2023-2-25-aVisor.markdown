@@ -46,6 +46,9 @@ vmc <vm id>		// 从Hypervisor控制台切换到VM控制台，例如：vmc 3，�
 ```
 
 <br>
+<div align="center"><img src="/assets/images/20230225-aVisor/running1.png"/></div>
+<div align="center"><img src="/assets/images/20230225-aVisor/running2.png"/></div>
+<br>
 
 **物理板运行**
 <br>
