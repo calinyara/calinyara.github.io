@@ -53,7 +53,7 @@ description:
 
 - [Intel **SGX**](https://www.intel.cn/content/www/cn/zh/architecture-and-technology/software-guard-extensions.html)
 - [Intel **TDX** (Trusted Domain Extensions)](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-trust-domain-extensions.html)
-- [AMD **SEV-SNP**](https://www.amd.com/system/files/TechDocs/SEV-SNP-strengthening-vm-isolation-with-integrity-protection-and-more.pdf): 类似Intel TDX将Intel SGX中的进程级保护机制扩展到了虚拟机，用户无需重写他们的应用程序就可以实现隐私计算。
+- [AMD **SEV-SNP**](https://www.amd.com/system/files/TechDocs/SEV-SNP-strengthening-vm-isolation-with-integrity-protection-and-more.pdf): 类似Intel TDX，将Intel SGX中的进程级保护机制扩展到了虚拟机，用户无需重写他们的应用程序就可以实现隐私计算。
 - [ARMv9 **Realms**](https://community.arm.com/arm-community-blogs/b/architectures-and-processors-blog/posts/unlocking-the-power-of-data-with-arm-cca)
 - [RISC-V **Keystone**](https://keystone-enclave.org/)
 
