@@ -18,3 +18,4 @@
 - [16] [tiny_raspi: 用buildroot为树莓派制作最小内核](https://calinyara.github.io/technology/2022/10/20/tiny-raspi.html)
 - [17] [ChatGPT虚拟机](https://calinyara.github.io/technology/2023/02/25/ChatGPT-vm.html)
 - [18] [aVisor: 基于ARM的Hypervisor及操作系统实现](https://calinyara.github.io/technology/2023/02/25/aVisor.html)
+- [19] [一分钟理解机密计算(Confidential Computing)](https://calinyara.github.io/technology/2023/03/02/confidential_computing.html)
