@@ -2,5 +2,6 @@
 - url: "aVisor"
 - url: "raspberry-cluster"
 - url: "ipi-virtualization"
+- url: "gpu-virtualization"
 - url: "asor-hypervisor"
 - url: "dtop"
