@@ -108,7 +108,7 @@ Turing Pi同时支持带eMMC的计算模块和不带eMMC的计算模块，其第
 
 具体步骤参考如下页面
 
-https://www.raspberrypi.org/documentation/installation/installing-images/README.md
+[https://www.raspberrypi.org/documentation/installation/installing-images/README.md](https://www.raspberrypi.org/documentation/installation/installing-images/README.md)
 
 <br>
 
@@ -116,7 +116,7 @@ https://www.raspberrypi.org/documentation/installation/installing-images/README.
 
 具体步骤参考如下页面 (需要借助树莓派计算模块IO扩展板或者Turing Pi主板)
 
-http://raspberrypiwiki.com/How_to_Burning_System_for_the_eMMC_of_Raspberry_Pi_Compute_Module
+[http://raspberrypiwiki.com/How_to_Burning_System_for_the_eMMC_of_Raspberry_Pi_Compute_Module](http://raspberrypiwiki.com/How_to_Burning_System_for_the_eMMC_of_Raspberry_Pi_Compute_Module)
 
 <br>
 
