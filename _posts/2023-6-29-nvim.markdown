@@ -1,0 +1,146 @@
+---
+layout: post
+title:  "基于vim的代码集成开发环境"
+categories: Technology
+tags: vim nvim neovim editor 编辑器 代码编辑 IDE 集成开发环境
+author: Calinyara
+description:
+---
+
+<br>
+
+**工欲善其事，必先利其器！**
+
+<br>
+
+### 依赖软件包
+
+- [Nerd 字体](https://www.nerdfonts.com/font-downloads)
+- [Neovim v0.8+ 以上版本](https://github.com/neovim/neovim/releases/tag/stable)
+- [Tree-sitter CLI](https://github.com/tree-sitter/tree-sitter/blob/master/cli/README.md)
+- [ripgrep](https://github.com/BurntSushi/ripgrep)
+- [lazygit (* 可选)](https://github.com/jesseduffield/lazygit)
+- [Python (* 可选)](https://www.python.org/)
+- [Node (* 可选)](https://nodejs.org/en/)
+
+<br>
+
+### 安装步骤
+
+```shell
+$ git clone https://github.com/calinyara/nvim.git ~/.config/nvim
+$ git clone https://github.com/ssqre/astronvim_config.git ~/.config/nvim/lua/user
+$ nvim
+```
+
+<br>
+
+### **效果图**
+
+<div align="center"><img src="/assets/images/20230629-nvim/0.png"/></div>
+
+<br>
+
+### **文件查找**
+
+**快捷键：space + ff**
+
+<div align="center"><img src="/assets/images/20230629-nvim/1.png"/></div>
+
+<br>
+
+### **字符查找**
+
+**快捷键：space + rw**
+
+<div align="center"><img src="/assets/images/20230629-nvim/2.png"/></div>
+
+<br>
+
+### **按需安装LSP**
+
+**快捷键：space + pm2**
+
+<div align="center"><img src="/assets/images/20230629-nvim/4.png"/></div>
+
+<br>
+
+### **函数引用**
+
+**快捷键：g + r**
+
+<div align="center"><img src="/assets/images/20230629-nvim/3.png"/></div>
+
+<br>
+
+对于Linux内核，需要 ***compile_commands.json***
+
+```shell
+make defconfig
+make
+./scripts/clang-tools/gen_compile_commands.py
+```
+
+
+
+<br>
+
+### **常用快捷键列表**
+
+| 功能                           | 快捷键                |
+| :----------------------------- | :-------------------- |
+| Leader key                     | space                 |
+| Dashboard页面                  | Leader + h            |
+| 移动到上窗口                   | Ctrl + k              |
+| 移动到下窗口                   | Ctrl + j              |
+| 移动到左窗口                   | Ctrl + h              |
+| 移动到右窗口                   | Ctrl + l              |
+| 切换到下一个Buffer             | ]b                    |
+| 切换到前一个Buffer             | [b                    |
+| 关闭当前Buffer                 | Leader + c            |
+| 打开或关闭文件浏览窗口         | Leader + e            |
+| 在文件浏览窗口中聚焦到当前文件 | Leader + o            |
+| 新建文件                       | Leader + n            |
+| **查找文件**                   | **Leader + ff**       |
+| 查找文件(包括隐藏文件)         | Leader + fF           |
+| **查找字符**                   | **Leader + fw**       |
+| 查找字符(包括隐藏文件)         | Leader + fW           |
+| 查看打开过的老文件             | Leader + fo           |
+| 打开或关闭符号列表窗口         | Leader + lS           |
+| **查找当前文档中的符号**       | **Leader + ls**       |
+| **查找所有文档中的符号**       | **Leader + lG**       |
+| 跳转到声明                     | gD                    |
+| 跳转到类型定义                 | gT                    |
+| **跳转到定义**                 | **gd**                |
+| **跳转到函数实现**             | **gI**                |
+| **查找符号引用**               | **gr 或 Leader + lR** |
+| 格式化文档符合代码规范         | Leader + lf           |
+| 查看当前光标下符号的详情       | Shift + k             |
+| **跳转到前一个位置**           | **Ctrl + O**          |
+| **跳转到后一个位置**           | **Ctrl + I**          |
+| **调出或关闭终端窗口**         | **F7**                |
+
+\* 更多功能按space键
+
+<br>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-66555622-4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-66555622-4');
+</script>
+<br>
+
+<!-- Google tag (gtag.js) -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-27WH7FZ7KT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-27WH7FZ7KT');
+</script>
