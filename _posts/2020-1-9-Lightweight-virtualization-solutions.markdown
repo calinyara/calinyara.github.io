@@ -2,7 +2,7 @@
 layout: post
 title:  "轻量级虚拟化解决方案"
 categories: Technology
-tags: Virtualization crosvm ChromeOS kata rust nemu gvisor container hypervisor firecracker
+tags: Virtualization crosvm ChromeOS kata rust nemu gvisor container hypervisor firecracker zh
 author: Calinyara
 description: 
 ---

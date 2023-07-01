@@ -2,7 +2,7 @@
 layout: post
 title:  "基于vim的代码集成开发环境"
 categories: Technology
-tags: vim nvim neovim editor 编辑器 代码编辑 IDE 集成开发环境
+tags: vim nvim neovim editor 编辑器 代码编辑 IDE 集成开发环境 zh
 author: Calinyara
 description:
 ---

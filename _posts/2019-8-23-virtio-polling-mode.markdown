@@ -2,7 +2,7 @@
 layout: post
 title:  "Virtio Polling Mode and Its Advantage for Real Time Virtual Machine"
 categories: Technology
-tags: Network Virtualization Performance Optimization ACRN virtio RT PMD
+tags: Network Virtualization Performance Optimization ACRN virtio RT PMD en
 author: Calinyara
 description: 
 ---

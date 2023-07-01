@@ -2,7 +2,7 @@
 layout: post
 title:  "ChatGPT虚拟机"
 categories: Technology
-tags: 内核 kernel Linux 操作系统 ACRN hypervisor 虚拟机 虚拟化 virtualization OS ChatGPT AI AIGC VM 模拟
+tags: 内核 kernel Linux 操作系统 ACRN hypervisor 虚拟机 虚拟化 virtualization OS ChatGPT AI AIGC VM 模拟 zh en
 author: Calinyara
 description:
 ---

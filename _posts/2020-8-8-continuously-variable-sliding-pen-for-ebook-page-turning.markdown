@@ -2,7 +2,7 @@
 layout: post
 title:  "Continuously Variable Sliding Pencil for E-book Page Turning"
 categories: Technology
-tags: human-machine-interface HMI control-device pen pencil apple iPad
+tags: human-machine-interface HMI control-device pen pencil apple iPad en
 author: Calinyara
 description:
 ---

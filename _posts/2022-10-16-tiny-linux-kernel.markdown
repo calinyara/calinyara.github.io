@@ -2,7 +2,7 @@
 layout: post
 title:  "编译一个最小可用Linux内核"
 categories: Technology
-tags: 内核编译 内核 kernel Linux 文件系统 rootfs initramfs 树莓派 raspberry pi fs ramfs
+tags: 内核编译 内核 kernel Linux 文件系统 rootfs initramfs 树莓派 raspberry pi fs ramfs zh
 author: Calinyara
 description:
 ---

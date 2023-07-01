@@ -2,7 +2,7 @@
 layout: post
 title:  "Armv8架构虚拟化介绍"
 categories: Technology
-tags: Arm Virtualization 虚拟机 虚拟化 体系结构
+tags: Arm Virtualization 虚拟机 虚拟化 体系结构 zh
 author: Calinyara
 description: 
 ---

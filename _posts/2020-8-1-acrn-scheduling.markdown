@@ -2,7 +2,7 @@
 layout: post
 title:  "CPU Sharing And vCPU Scheduling In ACRN Hypervisor"
 categories: Technology
-tags: ACRN hypervisor virtualization scheduling scheduler BVT IORR vcpu
+tags: ACRN hypervisor virtualization scheduling scheduler BVT IORR vcpu en
 author: Calinyara
 description:
 ---

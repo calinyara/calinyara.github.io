@@ -2,7 +2,7 @@
 layout: post
 title:  "tiny_raspi: 用buildroot为树莓派制作最小内核"
 categories: Technology
-tags: 内核编译 内核 kernel Linux 文件系统 rootfs initramfs 树莓派 raspberry pi buildroot ramfs fs
+tags: 内核编译 内核 kernel Linux 文件系统 rootfs initramfs 树莓派 raspberry pi buildroot ramfs fs zh
 author: Calinyara
 description:
 ---

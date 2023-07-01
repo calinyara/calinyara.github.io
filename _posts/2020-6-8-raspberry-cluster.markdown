@@ -2,7 +2,7 @@
 layout: post
 title:  "基于树莓派搭建小型云计算集群"
 categories: Technology
-tags: 树莓派 raspberry pi cloud cluster kubernetes k8s k3s 边缘计算
+tags: 树莓派 raspberry pi cloud cluster kubernetes k8s k3s 边缘计算 zh
 author: Calinyara
 description:
 ---

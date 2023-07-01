@@ -2,7 +2,7 @@
 layout: post
 title:  "Virtio Devices in Crosvm vs ACRN"
 categories: Technology
-tags: Virtualization crosvm ACRN virtio ChromeOS
+tags: Virtualization crosvm ACRN virtio ChromeOS en
 author: Calinyara
 description: 
 ---

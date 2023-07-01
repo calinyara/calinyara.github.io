@@ -2,7 +2,7 @@
 layout: post
 title:  "dtop: 一个基于减法的系统占用率及系统性能测量工具"
 categories: Technology
-tags: CPU占用率 top htop 系统占用率 性能分析 sysload 占用率 cpu-utilization performance
+tags: CPU占用率 top htop 系统占用率 性能分析 sysload 占用率 cpu-utilization performance zh
 author: Calinyara
 description:
 ---

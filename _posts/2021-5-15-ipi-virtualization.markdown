@@ -2,7 +2,7 @@
 layout: post
 title:  "Hardware-assisted IPI Virtualization"
 categories: Technology
-tags: IPI 虚拟化 virtualization Hardware-assisted
+tags: IPI 虚拟化 virtualization Hardware-assisted en
 author: Calinyara
 description:
 ---

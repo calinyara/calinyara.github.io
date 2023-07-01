@@ -2,7 +2,7 @@
 layout: post
 title:  "虚拟网络设备简介"
 categories: Technology
-tags: Network Virtualization Linux
+tags: Network Virtualization Linux zh
 author: Calinyara
 description: 
 ---

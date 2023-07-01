@@ -2,7 +2,7 @@
 layout: post
 title:  "在CPU计算资源中占个位"
 categories: Technology
-tags: CPU占用率 top htop 系统占用率 性能分析 占用率 cpu-utilization performance csp 云计算
+tags: CPU占用率 top htop 系统占用率 性能分析 占用率 cpu-utilization performance csp 云计算 zh
 author: Calinyara
 description:
 ---

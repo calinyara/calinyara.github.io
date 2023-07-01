@@ -2,7 +2,7 @@
 layout: post
 title:  "vWiFi - A Scalable and Software Defined WiFi Virtualization Solution"
 categories: Technology
-tags: Virtualization WiFi hypervisor datacenter 802.11 scalability firmware vWiFi software-defined
+tags: Virtualization WiFi hypervisor datacenter 802.11 scalability firmware vWiFi software-defined en
 author: Calinyara
 description:
 ---

@@ -2,7 +2,7 @@
 layout: post
 title:  "ASOR - 基于x86架构的虚拟机实现"
 categories: Technology
-tags: X86 Virtualization ASOR
+tags: X86 Virtualization ASOR zh
 author: Calinyara
 description: 
 ---

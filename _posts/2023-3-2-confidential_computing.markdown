@@ -2,7 +2,7 @@
 layout: post
 title:  "一分钟理解机密计算(Confidential Computing)"
 categories: Technology
-tags: Confidential Computing 机密计算 安全 secure
+tags: Confidential Computing 机密计算 安全 secure zh
 author: Calinyara
 description:
 ---

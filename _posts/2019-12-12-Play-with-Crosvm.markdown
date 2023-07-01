@@ -2,7 +2,7 @@
 layout: post
 title:  "Play with Crosvm"
 categories: Technology
-tags: Virtualization crosvm buildroot ChromeOS linux kernel rootfs
+tags: Virtualization crosvm buildroot ChromeOS linux kernel rootfs en
 author: Calinyara
 description: 
 ---
