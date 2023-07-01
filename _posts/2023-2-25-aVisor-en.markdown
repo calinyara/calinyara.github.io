@@ -30,7 +30,7 @@ description:
 
 <br>
 
-### **Operation In the Consoles**
+### **Operation In the Console**
 
 The above demo will run 4 Guest VMs on the Hypervisor. After startup, press ***Enter*** to go to the hypervisor's console.
 - **[echo](https://github.com/calinyara/avisor/tree/main/guests/echo)**:  A baremetal binary that echoes keyboard input.
