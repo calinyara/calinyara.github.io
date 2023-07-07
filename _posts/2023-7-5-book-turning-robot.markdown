@@ -9,7 +9,7 @@ description:
 
 <br>
 
-<video src="/assets/images/20230705-boot-turning-robot/voice-activated automatic book-turning robot.mp4" controls width="666" height="375"></video>
+<video src="/assets/images/20230705-boot-turning-robot/voice-activated automatic book-turning robot.mp4" controls autoplay width="666" height="375"></video>
 
 <br>
 
