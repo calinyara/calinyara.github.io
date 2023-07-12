@@ -2,7 +2,7 @@
 layout: post
 title:  "aVisor: A Tiny Hypervisor for Raspberry Pi"
 categories: Technology
-tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi buildroot hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm en
+tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi buildroot hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm en automotive
 author: Calinyara
 description:
 ---

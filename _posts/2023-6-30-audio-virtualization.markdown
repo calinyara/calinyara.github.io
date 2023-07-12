@@ -2,7 +2,7 @@
 layout: post
 title:  "Audio Virtualization"
 categories: Technology
-tags: audio virtualization 虚拟化 ALSA SOF virtio en
+tags: audio virtualization 虚拟化 ALSA SOF virtio en automotive
 author: Calinyara
 description:
 ---

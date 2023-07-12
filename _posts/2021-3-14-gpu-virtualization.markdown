@@ -2,7 +2,7 @@
 layout: post
 title:  "GPU虚拟化/显示虚拟化"
 categories: Technology
-tags: GPU 虚拟化 图形虚拟化 显卡 显卡虚拟化 GPGPU GVT-s GVT-d GVT-g crosvm virtualization display virtio virtio-gpu qemu zh
+tags: GPU 虚拟化 图形虚拟化 显卡 显卡虚拟化 GPGPU GVT-s GVT-d GVT-g crosvm virtualization display virtio virtio-gpu qemu zh automotive
 author: Calinyara
 description:
 ---
