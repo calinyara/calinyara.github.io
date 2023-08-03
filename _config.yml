@@ -27,6 +27,6 @@ paginate: 10
 
 highlighter: rouge
 markdown: kramdown
-plugins: ['jekyll-paginate', 'jekyll-feed']
+plugins: ['jekyll-paginate', 'jekyll-feed', 'jekyll-sitemap']
 
 exclude: ['README.md', 'LICENSE', "*.bak"]
