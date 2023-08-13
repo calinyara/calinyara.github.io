@@ -2,7 +2,7 @@
 layout: post
 title:  "aVisor: 基于ARM架构的Hypervisor及操作系统实现"
 categories: Technology
-tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi buildroot hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm zh
+tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi buildroot hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm zh avisor
 author: Calinyara
 description:
 ---

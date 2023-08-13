@@ -1,0 +1,76 @@
+---
+layout: post
+title:  "aVisor now supports loading and running virtual machines dynamically"
+categories: Technology
+tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi buildroot hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm en automotive avisor
+author: Calinyara
+description:
+---
+
+<br>
+
+**[aVisor](https://github.com/calinyara/avisor)** now supports loading and running virtual machines dynamically. Just copy the binaries or images of VMs to the SD card, then use the ***vmld*** command to load and run them. A ***ls*** command is also added for checking the files in the SD card.
+
+<br>
+
+```
+ls			                 // List all files (VM images or binary)
+vmld <images> <load addr> <entry addr>   // Load a VM binary and run it
+```
+
+<br>
+
+<div align="center"><img src="/assets/images/20230813-aVisor/1.png"/></div>
+<div align="center"><img src="/assets/images/20230813-aVisor/2.png"/></div>
+<div align="center"><img src="/assets/images/20230813-aVisor/3.png"/></div>
+
+<br>
+
+### Example
+
+```shell
+vmld lrtos.bin 0x0 0x0
+vmld echo.bin 0x0 0x0
+vmld uboot.bin 0x80000 0x80000
+vmld freertos.bin 0x80000 0x80000
+```
+
+<br>
+
+### References
+
+- [aVisor: A Tiny Hypervisor for Raspberry Pi](https://calinyara.github.io/technology/2023/02/25/aVisor-en.html)
+
+
+<br>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-69PP8GKYST"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-69PP8GKYST');
+</script>
+
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-66555622-4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-66555622-4');
+</script>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-27WH7FZ7KT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-27WH7FZ7KT');
+</script>

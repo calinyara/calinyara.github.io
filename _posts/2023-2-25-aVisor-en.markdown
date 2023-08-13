@@ -2,7 +2,7 @@
 layout: post
 title:  "aVisor: A Tiny Hypervisor for Raspberry Pi"
 categories: Technology
-tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi buildroot hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm en automotive
+tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi buildroot hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm en automotive avisor
 author: Calinyara
 description:
 ---
@@ -76,7 +76,9 @@ Copy ***config.txt, bootcode.bin, start.elf, lrtos.bin, echo.bin, kernel8.img***
 
 <br>
 
+### References
 
+- [aVisor now supports loading and running virtual machines dynamically](https://calinyara.github.io/technology/2023/08/13/aVisor-en-2.html)
 
 <br>
 
