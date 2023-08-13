@@ -25,3 +25,5 @@
 - [23] [在CPU计算资源中占个位](https://calinyara.github.io/technology/2023/04/01/bag-seats-in-cpu.html)
 - [24] [基于vim的代码集成开发环境](https://calinyara.github.io/technology/2023/06/29/nvim.html)
 - [25] [Audio Virtualization](https://calinyara.github.io/technology/2023/06/30/audio-virtualization.html)
+- [26] [Voice-activated Automatic Book-turning Robot](https://calinyara.github.io/technology/2023/07/05/book-turning-robot.html)
+- [27] [aVisor now supports loading and running virtual machines dynamically](https://calinyara.github.io/technology/2023/08/13/aVisor-en-2.html)
