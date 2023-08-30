@@ -80,6 +80,8 @@ Copy ***config.txt, bootcode.bin, start.elf, lrtos.bin, echo.bin, kernel8.img***
 
 - [aVisor now supports loading and running virtual machines dynamically](https://calinyara.github.io/technology/2023/08/13/aVisor-en-2.html)
 
+- [aVisor: SMP Support](https://calinyara.github.io/technology/2023/08/30/aVisor-smp.html)
+
 <br>
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
