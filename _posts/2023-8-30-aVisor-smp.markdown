@@ -1,46 +1,27 @@
 ---
 layout: post
-title:  "aVisor: Supports loading and running virtual machines dynamically"
+title:  "aVisor: SMP Support"
 categories: Technology
-tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi buildroot hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm en automotive avisor
+tags: 内核 kernel Linux 操作系统 树莓派 raspberry pi 多核 hypervisor 虚拟机 虚拟化 virtualization OS 调度 arm en automotive avisor smp
 author: Calinyara
 description:
 ---
 
 <br>
 
-**[aVisor](https://github.com/calinyara/avisor)** now supports loading and running virtual machines dynamically. Just copy the binaries or images of VMs to the SD card, then use the ***vmld*** command to load and run them. A ***ls*** command is also added for checking the files in the SD card.
+The Raspberry Pi 3/4 has four CPU cores.  **aVisor** supports user-defined configurations that allow user to run virtual machines on different physical CPUs simultaneously.
 
 <br>
 
-```
-ls			                 // List all files (VM images or binary)
-vmld <images> <load addr> <entry addr>   // Load a VM binary and run it
-```
-
-<br>
-
-<div align="center"><img src="/assets/images/20230813-aVisor/1.png"/></div>
-<div align="center"><img src="/assets/images/20230813-aVisor/2.png"/></div>
-<div align="center"><img src="/assets/images/20230813-aVisor/3.png"/></div>
-
-<br>
-
-### Example
-
-```shell
-vmld lrtos.bin 0x0 0x0
-vmld echo.bin 0x0 0x0
-vmld uboot.bin 0x80000 0x80000
-vmld freertos.bin 0x80000 0x80000
-```
+<div align="center"><img src="/assets/images/20230830-aVisor/1.png"/></div>
+<div align="center"><img src="/assets/images/20230830-aVisor/2.png"/></div>
 
 <br>
 
 ### References
 
 - [aVisor: A Tiny Hypervisor for Raspberry Pi](https://calinyara.github.io/technology/2023/02/25/aVisor-en.html)
-
+- [aVisor: Supports loading and running virtual machines dynamically](https://calinyara.gitlab.io/technology/2023/08/13/aVisor-en-2.html)
 
 <br>
 
