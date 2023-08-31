@@ -9,7 +9,7 @@ description:
 
 <br>
 
-The Raspberry Pi 3/4 has four CPU cores.  **aVisor** supports user-defined configurations that allow user to run virtual machines on different physical CPUs simultaneously.
+The Raspberry Pi 3/4 has four CPU cores.  **aVisor** (v0.2.0) supports user-defined configurations that allow user to run virtual machines on different physical CPUs simultaneously.
 
 <br>
 
