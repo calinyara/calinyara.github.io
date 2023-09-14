@@ -9,7 +9,7 @@ description:
 
 <br>
 
-The Raspberry Pi 3/4 has four CPU cores.  **aVisor** (v0.2.0) supports user-defined configurations that allow user to run virtual machines on different physical CPUs simultaneously.
+The Raspberry Pi 3/4 has four CPU cores. **aVisor** (v0.2.0) supports user-defined configurations that allow user to run virtual machines on different physical CPUs simultaneously.
 
 <br>
 
@@ -22,10 +22,18 @@ The Raspberry Pi 3/4 has four CPU cores.  **aVisor** (v0.2.0) supports user-defi
 
 - [aVisor: A Tiny Hypervisor for Raspberry Pi](https://calinyara.github.io/technology/2023/02/25/aVisor-en.html)
 - [aVisor: Supports loading and running virtual machines dynamically](https://calinyara.gitlab.io/technology/2023/08/13/aVisor-en-2.html)
+- ```shell
+  git clone https://github.com/ssqre/aVisor.git
+  cd aVisor
+  ./run.sh
+  ```
+
+  <div align="center"><img src="/assets/images/20230830-aVisor/3.png"/></div>
 
 <br>
 
 <!-- Google tag (gtag.js) -->
+
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-69PP8GKYST"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
