@@ -31,6 +31,14 @@ The Raspberry Pi 3/4 has four CPU cores. **aVisor** (v0.2.0) supports user-defin
   <div align="center"><img src="/assets/images/20230830-aVisor/3.png"/></div>
 
 <br>
+- ```shell
+  # https://labs.play-with-docker.com/
+  docker run --rm -it ssqre/avisor bash -c /home/aVisor/run.sh
+  ```
+
+  <div align="center"><img src="/assets/images/20230830-aVisor/4.png"/></div>
+
+<br>
 
 <!-- Google tag (gtag.js) -->
 

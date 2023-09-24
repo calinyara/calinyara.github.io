@@ -82,6 +82,12 @@ Copy ***config.txt, bootcode.bin, start.elf, lrtos.bin, echo.bin, kernel8.img***
 
 - [aVisor: SMP Support](https://calinyara.github.io/technology/2023/08/30/aVisor-smp.html)
 
+- ```shell
+  docker run --rm -it ssqre/avisor bash -c /home/aVisor/run.sh
+  ```
+
+  
+
 <br>
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
