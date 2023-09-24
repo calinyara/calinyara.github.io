@@ -71,7 +71,15 @@ vmc <vm id>		// 从Hypervisor控制台切换到VM控制台，例如：vmc 3，�
 
 <br>
 
-参考: [**Armv8架构虚拟化介绍**](https://calinyara.github.io/technology/2019/11/03/armv8-virtualization.html)
+参考: 
+
+- [**Armv8架构虚拟化介绍**](https://calinyara.github.io/technology/2019/11/03/armv8-virtualization.html)
+
+- ```shell
+  docker run --rm -it ssqre/avisor bash -c /home/aVisor/run.sh
+  ```
+
+  
 
 <br>
 
