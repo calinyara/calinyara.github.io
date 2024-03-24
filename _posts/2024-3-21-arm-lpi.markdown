@@ -1,0 +1,520 @@
+---
+layout: post
+title:  "ARM LPI 中断 与 ITS"
+categories: Technology
+tags: arm zh arm64 gic gicv3 gicv4 中断 中断控制器 ITS LPI SPI PPI MSI SGI
+author: Calinyara
+description:
+---
+
+<br>
+
+# 1. 简介
+
+<br>
+
+本文介绍ARM 的 `Locality-specific Peripheral Interrupts ( LPIs )` 中断 ( 这是 GICv3/v4 中引入的一种中断类型) 与中断转换服务( `Interrupt Translation Service, ITS` )。
+
+<br>
+
+中断是向处理器发出的信号，表明需要处理的事件发生了。中断通常由外设生成。LPIs 通常用于产生`Message-Signaled Interrupts (MSIs)`中断的外设。由于 LPIs 的状态保存在内存中而不是寄存器中，因此 LPIs 的配置和管理与其他中断类型不同。SPI可以是MSI中断也可以不是，但LPI一定是MSI中断（*注：MSI 和 LPI是两个不同概念*），由中断转换服务（`Interrupt Translation Service , ITS`）提供转换。
+
+<br>
+
+# 2. LPIs
+
+<br>
+
+`LPIs`的配置与其他中断类型非常不同，涉及以下内容：
+
+- `GICR`
+- `ITS`
+
+<br>
+
+LPIs 总是基于MSI，并且由 `ITS` 支持。`ITS`负责接收来自外设的中断，并将它们作为 LPIs 转发到合适的`GICR`。系统可能包含多个 `ITS`，在这种情况下，每个 `ITS`必须单独配置。
+
+<br>
+
+*注：对 LPIs 的支持是可选的，由`GICD_TYPER.LPIS` 指示。*
+
+<br>
+
+# 3. Redistributors, GICR
+
+<br>
+
+`GICR`使用内存中的Table来存储 LPI 配置信息和每个物理 LPI 的状态。LPI 的配置信息存储在 LPI 配置表中， `GICR_PROPBASER`指向该表。LPI 配置是全局的，也就是说，所有的 `GICR` 必须看到相同的配置。通常，一个系统有一个单独的 `LPI Configuration Table`，由所有的 `GICR` 共享。LPI 的状态信息也存储在内存中的`LPI Pending Table`中，由`GICR_PENDBASER` 指向。每个 `GICR`都有自己的`LPI Pending Table`，这些Table不在 `GICR` 之间共享。
+
+<br>
+
+下图展示了三个 `GICR` 和相关的 LPI 表格：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-lpi/0.png)
+
+<br>
+
+## 3.1 GICR的初始配置
+
+<br>
+
+初始化`GICR`的步骤如下：
+
+1. 为`LPI Configuration Table`分配内存，并初始化该表并配置每个LPI。
+2. 在每个`GICR`中设置`GICR_PROPBASER`，使其指向`LPI Configuration Table`。
+3. 为每个`GICR`的`LPI Pending Table`分配内存，并初始化每个表的内容。在系统启动时，这通需要将该部分内存清零，即所有LPI处于inactive状态。
+4. 在每个`GICR`中设置`GICR_PENDBASER`，使其指向与该`GICR`相关联的`LPI Pending Table`。
+5. 在每个`GICR`中将`GICR_CTLR.EnableLPIs`设置为1，以启用LPI。
+
+<br>
+
+### LPI Configuration Table
+
+<br>
+
+`LPI Configuration Table`为每个LPI INTID 分配一个字节。下图显示了该表中条目的格式：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-lpi/1.png)
+
+<br>
+
+虽然SPI、PPI和SGI的优先级配置有8个比特位，但上述条目中只有6位用于记录LPI的优先级。LPI的优先级的低两位始终被视为0b00。没有字段用于记录中断分组配置。**LPI始终被视为非安全Group 1中断**。
+
+<br>
+
+`LPI Configuration Table`的大小取决于LPI的数量。GIC支持的最大`INTID`数量（SPI、PPI、SGI和LPI）由`GICD_TYPER.IDbits`指示。`LPI Configuration Table`仅处理LPI，它们使用的INTID大于8191。因此，为了支持所有可能的LPI，`LPI Configuration Table`的大小计算如下：
+
+```bash
+LPI Configuration Table 大小（字节）= 2 ^ (GICD_TYPER.IDbits + 1) – 8192
+```
+
+<br>
+
+但是，也可能只支持较小范围的INTID。`GICR_PROPBASER`还包括一个`IDbits`字段，指示LPI配置表支持的INTID数量。此数字必须等于或小于`GICD_TYPER.IDbits`中的值。软件必须为此数量的条目分配足够的内存。在这种情况下，`LPI Configuration Table`所需的大小如下：
+
+```bash
+LPI Configuration Table 大小（字节）= 2 ^ (GICR_PROPBASER.IDbits + 1) – 8192
+```
+
+中断控制器必须能够读取为`LPI Configuration Table`分配的内存，但不会写入此内存区域。
+
+<br>
+
+### LPI Pending Table
+
+<br>
+
+LPI的状态信息存储在内存中。LPI只有两种状态：`inactive`或`pending`。
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-lpi/2.png)
+
+<br>
+
+当中断被PE确认时，中断从`pending`状态转变为`inactive`状态。
+
+由于只有两种状态，因此在`LPI Pending Table`中每个 LPI 只有 1 位。因此，为了支持实现中所有可能的 `INTID`，`LPI Pending Table`的大小必须为：
+
+```bash
+LPI Configuration Table 大小 (字节) = (2 ^ (GICD_TYPER.IDbits + 1)) / 8
+```
+
+<br>
+
+与`LPI Configuration Table`不同，`LPI Pending Table`的大小没有考虑LPI `INTID` 是从8192开始。`LPI Pending Table`的前 1KB（对应于 `INTID` 0 到 8291 的条目）的内容取决于具体实现。
+
+<br>
+
+如同在`LPI Configuration Table`中描述的那样，可以使用比硬件支持的 `INTID`范围更小的范围。`GICR_PROPBASER.IDBits` 控制 `INTID` 范围的大小。因此，它影响 `LPI Configuration Table`和 `LPI Pending Table`的大小。在这种情况下，所需的`LPI Pending Table`大小如下：
+
+```bash
+LPI Pending Table 大小  (字节) = (2 ^ (GICR_PROPBASER.IDbits + 1)) / 8
+```
+
+<br>
+
+中断控制器必须能够从分配给 `LPI Pending Table`的内存中读取和写入。通常，当有太多Pending中断需要缓存或进入低功耗状态时，`GICR`会在内部缓存最高优先级的Pending中断，并将状态信息写入 `LPI Pending Table`。
+
+<br>
+
+在对应的 `GICR`中启用 LPI 后，软件将不会直接访问`LPI Pending Table`。
+
+<br>
+
+## 3.2 重新配置LPIs
+
+<br>
+
+LPI 配置信息存储在内存中的表中，而不是寄存器中。为了性能原因，`GICR`会缓存 LPI 配置信息。这意味着当要重新配置一个 LPI时，软件必须：
+
+1. 更新 `LPI Configuration Table`中的条目。
+2. 确保更新的全局可见性。
+3. Invalidate `GICR`中的配置缓存。
+
+使 `GICR`中缓存失效是通过发出**ITS** `INV` 或 `INVALL` 命令来实现的。`INV` 命令使特定的中断条目失效，因此当重新配置少量 LPI 时通常使用此命令。`INVALL` 命令使指定集合中所有中断的条目失效。有关 `ITS` 命令的更多信息，请参见4.4小节。
+
+如果`ITS`未实现上述功能，则软件必须通过写 `GICR_INVLPIR` 或 `GICR_INVALLR` 寄存器，以使 `GICR`重新加载中断配置。
+
+<br>
+
+# 4. ITS
+
+<br>
+
+一个外设通过向 `ITS`的 `GITS_TRANSLATER`写入消息来生成 LPI，该消息为 `ITS`提供了以下信息：
+
+<br>
+
+### Event ID (事件ID)
+
+这是写入到 `GITS_TRANSLATER`的值。事件 ID 标识外设正在发送的中断。事件 ID 可能与 `INTID` 相同，也可能由 `ITS` 转换为 `INTID`。
+
+<br>
+
+### Device ID (设备 ID)
+
+设备 ID 标识外设。生成设备 ID 的机制由具体实现决定。
+
+`ITS`处理外设消息，将其转换为可传递到连接的CPU的 `INTID`。
+
+物理 LPI 被分组到集合中，某个集合中的所有 LPI 都路由到同一个 `GICR`。软件将 LPI 分配给不同集合，可以将中断从一个PE移动到另一个PE。
+
+`ITS`使用三种类型的表来处理 LPI 的转换和路由：
+
+<br>
+
+**Device Table (设备表, DT)**
+
+每个 `ITS`都有一个设备表。设备表将设备 ID 映射到中断转换表。
+
+<br>
+
+**Interrupt Translation Tables (中断转换表, ITT)**
+
+每个设备 ID 或外设都有一个中断转换表（`ITT`）。`ITT` 包含特定于外设的事件 ID 和 `INTID` 之间的映射。它们还包含 `INTID` 所属的集合。
+
+<br>
+
+**Collection Table  (集合表, CT)**
+
+每个 `ITS` 都有一个集合表。集合表将集合映射到 `GICRs`。
+
+当外设向 `GITS_TRANSLATER` 写入消息时，`ITS` 执行以下操作：
+
+1. 使用`Device ID` 从设备表中选择适当的条目。此条目标识要使用的中断转换表。
+2. 使用`Event ID` 从所选的中断转换表中选择适当的条目。此条目提供 `INTID` 和 **`Collection** ID`。
+3. 使用**`Collection** ID` 从集合表中选择所需的条目，返回路由信息。
+4. 将中断转发到目标 `GICR`。
+
+<br>
+
+下图展示了此过程：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-lpi/3.png)
+
+<br>
+
+*注：`ITS` 可选支持多个硬件集合。硬件集合是 ITS 内部保存配置的地方，这样就无需将配置存储在内存中。`GITS_TYPER.HCC` 报告支持的硬件集合数量。你仍然可以将其视为 **Collection Table**的一部分，只是不存储在内存中。*
+
+<br>
+
+## 4.1 The Command Queue (命令队列)
+
+<br>
+
+使用`Command Queue`来控制`ITS`。命令队列是一个循环的内存缓冲区，涉及以下三个寄存器：
+
+- `GITS_CBASER`：此寄存器指定命令队列的基地址和大小。命令队列必须是 64KB 对齐的，并且大小必须是 4KB 的倍数。命令队列中的每个条目为 32 字节。`GITS_CBASER` 还包含 `ITS`在访问命令队列时使用的缓存和共享性设置。
+- `GITS_CREADR`：此寄存器指向 `ITS` 将要处理的下一个命令。
+- `GITS_CWRITER`：此寄存器指向队列中下一个新命令应该被写入的位置。
+
+<br>
+
+下图显示了命令队列的简化表示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-lpi/4.png)
+
+<br>
+
+## 4.2 初始化配置一个ITS
+
+<br>
+
+要在系统启动时配置 ITS，软件需执行以下步骤：
+
+1. **为`Device Tables` 和`Collection Tables`分配内存**
+   `GITS_BASER[0..7]` 寄存器指定了 `ITS` 设备表和集合表的基地址和大小。软件使用这些寄存器来发现 `ITS` 支持的表的数量和类型。然后，软件必须分配所需的内存，并将 `GITS_BASERn` 寄存器设置为指向这个分配的内存。
+2. **为`Command Queue`分配内存**
+   软件必须为命令队列分配内存，并将 `GITS_CBASER` 和 `GITS_CWRITER` 设置为指向此分配内存的起始地址。
+3. **启用 `ITS`**
+   当表和命令队列被分配后，可以启用 `ITS`。通过将 `GITS_CTLR.Enable` 位设置为 1 来完成此操作。一旦设置了 `GITS_CTLR.Enable`，`GITS_BASERn` 和 `GITS_CBASER` 寄存器就变为只读状态。
+
+<br>
+
+## 4.3 设备表和集合表的大小与格式
+
+<br>
+
+设备表和集合表的位置和大小是使用`GITS_BASERn`寄存器进行配置的。在启用`ITS`之前，软件必须为这些表分配内存并配置`GITS_BASERn`寄存器。软件可以分配一个单级表或两级表。这由`GITS_BASERn.Indirect`指定。对两级表的支持是可选的， 如果`ITS`仅支持单级表，则`GITS_BASERn.Indirect`为 RAZ/WI。
+
+<br>
+
+### 单级表
+
+<br>
+
+对于单级表，分配给`ITS`的是一个连续的内存块，用于记录映射。在启用`ITS`之前，软件需要将该内存填充为零。之后，当ITS处理命令队列中的命令时，表会被`ITS`填充。
+
+<br>
+
+下面的图显示了一个单级表。该表是一个连续的内存块，其中`GITS_BASERn`寄存器指向表的基地址：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-lpi/5.png)
+
+<br>
+
+表的大小随着 `Device ID` 或 `Collection ID` 的个数而变化，应当根据如下方式计算所需大小：
+
+```bash
+Size in bytes = 2 ^ ID_width * entry_size 
+```
+
+其中，`entry_size` 是每个表条目的字节数，由 `GITS_BASERn.Entry_Size` 指定。
+
+<br>
+
+在配置 `GITS_BASERn` 寄存器时，表的大小被指定为页的整数倍。一个页的大小由 `GITS_BASERn.Page_Size` 控制，可以是 4KB、16KB 或 64KB。因此，上述给出的公式的结果必须向上舍入到下一个整数页面大小。
+
+<br>
+
+例如，如果一个系统实现了 8 位的 Device ID，表的每个条目占的字节数为 8，且使用了 4K 的页面大小， 则表大小为
+
+```bash
+2^8 * 8 = 256 * 8 = 2048 字节 --> 4K（向上舍入到下一个整数页面大小）
+```
+
+<br>
+
+### 两级表
+
+<br>
+
+使用两级表，软件分配一个一级表和若干个二级表，如下图所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-lpi/6.png)
+
+<br>
+
+第一级表由软件填充，每个条目要么指向一个二级表，要么标记为无效。在分配给 `ITS`之前，必须将二级表填充为零，并在 `ITS`处理命令队列时由其填充。
+
+<br>
+
+在 `ITS`启用的情况下（`GITS_CTLR.Enabled == 1`），软件可以分配额外的二级表，并更新相应的一级表条目以指向这些新分配的表。在 `ITS` 启用状态下，软件不得删除分配或更改现有分配。
+
+<br>
+
+每个二级表的大小为一个页面。与单级表一样，页面大小由 `GITS_BASERn.Page_Size` 配置。因此，它包含（page_size / entry_size）个条目。
+
+<br>
+
+每个一级表条目表示（`page_size / entry_size`）个 ID，并且可以指向一个二级表或标记为无效。任何使用与无效条目对应的 ID 的 `ITS` 命令都将被丢弃。
+
+<br>
+
+第一级表的所需大小可以通过以下公式计算：
+
+```bash
+Size in bytes = （2 ^ ID_width /（page_size / entry_size））* 8
+```
+
+与单级表一样，第一级表的大小指定为页面数。因此，公式的结果必须向上舍入到下一个整个页面大小。
+
+<br>
+
+## 4.4 添加新命令到Command Queue
+
+<br>
+
+要将新命令添加到命令队列，软件必须：
+
+1. **将新命令写入队列**
+   `GITS_CWRITER` 指向命令队列中下一个不包含有效命令的条目。软件必须将命令写入此条目，并确保全局可见性。
+2. **更新 `GITS_CWRITER`**
+   软件必须更新 `GITS_CWRITER`到下一个不包含新命令的条目。更新 `GITS_CWRITER` 通知 `ITS`已添加新命令。软件可以同时向队列添加多个命令，前提是命令队列中有足够的空间，并相应地更新了 `GITS_CWRITER`。
+3. **等待 `ITS` 读取命令**
+   软件可以通过轮询 `GITS_CREADR` 来检查 `ITS` 是否已读取命令。当 `GITS_CWRITER.Offset` 等于 `GITS_CREADR.Offset` 时，`ITS` 已读取所有命令。或者，可以添加 INT 命令以生成中断，当 `ITS` 读取完一组命令后发送中断。
+
+`ITS` 按顺序从命令队列中读取命令。但是，这些命令对 GICR的可见性可能是乱序的。`SYNC` 命令可以确保先前发送的命令生效。
+
+*注：当 `GITS_CWRITER` 指向 `GITS_CREADR` 前面的位置时，命令队列已满。软件在尝试添加新命令之前必须检查队列中是否有足够的空间。*
+
+<br>
+
+## 4.5 映射一个中断到GICR
+
+<br>
+
+每个能够向 `ITS` 发送中断的外设都有自己的 `Device ID`。每个 `Device ID` 都需要有自己的中断转换表（`ITT`）来保存其 `Event ID` 到 `INTID` 的映射关系。软件必须为 `ITT` 分配内存，然后使用 `MAPD` 命令将 `Device ID` 映射到 `ITT`，如下所示：
+
+```bash
+MAPD <DeviceID>, <ITT_Address>, <Size>
+```
+
+<br>
+
+当外设的`Device ID` 被映射到一个 `ITT`后，它可以发送的不同 `Event ID` 必须被映射到`INTID` 和 `Collections`。每个`Collection`都被映射到一个目标 `GICR`。可以使用 `MAPTI` 和 `MAPI` 命令将 `INTID` 映射到`Collection`。当 `Event ID` 和 `INTID` 相同时，使用 `MAPI` 命令，如下所示：
+
+```bash
+MAPI <DeviceID>, <EventID>, <Collection ID>
+```
+
+<br>
+
+当`Event ID`和`INTID`不同时，使用`MAPTI`
+
+```bash
+MAPTI <DeviceID>, <EventID>, <INTID>, <Collection ID>
+```
+
+<br>
+
+通过`MAPC`命令将`Collections`映射到`GICR`
+
+```bash
+MAPC <Collection ID>, <Target GICR>
+```
+
+目标 `GICR`的寻址方式取决于 `GITS_TYPER.PTA`：
+
+- 当`GITS_TYPER.PTA==0` 时，通过 ID 指定 `GICR`，可从 `GICR_TYPER.Processor_Number` 中读取
+- 当 `GITS_TYPER.PTA==1` 时，通过其物理地址指定 `GICR`
+
+<br>
+
+**示例**
+
+一个定时器的 `Device ID` 为 5，并使用 2 位的 `Event ID`。我们希望将 `Event ID` 0 映射到 `INTID` 8725。为定时器分配的 `ITT` 的地址是 0x84500000。我们使用集合`Collection` 3，并将中断传递给 ID 为 7 的 GICR。
+
+此操作的命令序列如下：
+
+```bash
+MAPD 5, 0x84500000, 2    // Map DeviceID 5 to an ITT
+MAPTI 5, 0, 8725, 3      // Map EventID 0 to INTID 8725 and collection 3
+MAPC 3, 7                // Map collection 3 to GICR 7
+SYNC 7
+```
+
+*注：这个例子假设之前没有配置过任何映射，并且 `GITS_TYPER.PTA==0`。*
+
+<br>
+
+## 4.6 中断在GICR之间迁移
+
+<br>
+
+可以使用几种不同的技术将中断从一个 `GICR`移动到另一个 `GICR`：
+
+- **重新映射一个 `Collection`**
+  软件可以通过重新映射整个 `collection`将所有中断从一个 `GICR` 移动到另一个 `GICR`。通常情况下，当连接到 `GICR` 的处理单元关闭电源时，必须将中断移动到另一个 `GICR` 。这可以通过以下命令序列完成：
+
+    ```bash
+  MAPC <Collection ID>, <RDADDR2>    // Remap collection to new GICR
+  SYNC <RDADDR2>                     // Ensure visibility of the mapping
+  MOVALL <RDADDR1>, <RDADDR2>        // Move pending state to new GICR
+  SYNC <RDADDR1>                     // Ensure visibility of move
+    ```
+
+  在这个命令序列中，`RDADDR1`是之前的目标 `GICR`，`RDADDR2`是新的目标 `GICR`。
+
+  如果有多个 `collection` 指向 `RDADDR1`，则我们需要多个 `MAPC` 命令，每	个 `collection` 一个。这个序列假设所有的 `collections` 都被重新映射到相同的新目标 `GICR`。
+  
+
+<br>
+- **将一个中断映射到另一个`Collection`**
+
+  可以使用以下命令序列来将单个中断重新映射到不同的`collection` ：
+
+  ```bash
+  MOVI <DeviceID>, <EventID>, <ID of new Collection>
+  SYNC <RDADDR1>
+  ```
+
+  在此命令序列中，`RDADDR1`是最初分配给中断的集合所针对的`GICR`。
+
+<br>
+
+## 4.7 移除中断映射
+
+<br>
+
+要重新映射或删除中断的映射，软件必须执行以下操作：
+
+1. 禁用该映射的物理INTID的中断。这是在`LPI Configuration Table`中配置完成的。
+2. 发出`DISCARD`命令。这会删除中断的映射并清除映射INTID的Pending状态。
+3. 发出`SYNC`命令并等待命令完成。
+
+命令完成后，不会再将更多中断传递到先前将中断映射到的GICR。
+
+<br>
+
+## 4.8 重映射与移除设备映射
+
+<br>
+
+要更改或删除设备的映射，软件必须执行以下操作：
+
+1. 针对当前映射的每个`Event ID`，按照4.7小节的步骤进行操作。
+2. 发出`MAPD`命令以重新映射设备。或者，使用将有效位清除为0的`MAPD`命令来删除映射。
+3. 发出`SYNC`命令并等待命令完成。
+
+
+
+<br>
+
+<br>
+
+<!-- Google tag (gtag.js) -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-69PP8GKYST"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-69PP8GKYST');
+</script>
+
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-66555622-4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-66555622-4');
+</script>
+
+
+<!-- Google tag (gtag.js) -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-27WH7FZ7KT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-27WH7FZ7KT');
+</script>

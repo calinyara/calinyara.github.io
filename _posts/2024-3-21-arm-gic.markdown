@@ -1,0 +1,856 @@
+---
+layout: post
+title:  "ARM通用中断控制器GICv3与GICv4"
+categories: Technology
+tags: arm zh arm64 gic gicv3 gicv4 中断 中断控制器 ITS SGI PPI SPI MSI
+author: Calinyara
+description:
+---
+
+<br>
+
+## 1. 背景
+
+<br>
+
+中断是发送给处理器的信号，表示某个事件发生需要处理器处理，中断通常由外围设备产生。例如，一个系统可能使用UART来和外部实际通信。当UART收到数据时，需要通过一种机制告诉处理器当前有数据到来，需要被处理。这时UART可以产生一个中断来通知处理器。
+
+一个小型系统可能只有少量中断源，一个处理器。而较大的系统可能有更多的中断源和处理器。GIC中断控制器执行中断管理、优先级排序和路由等关键任务。GIC汇集系统中的所有中断，对其进行优先级排序，并将它们发送到一个核心进行处理，其主要用于提升处理器效率和启用中断虚拟化。
+
+GIC是基于Arm GIC架构实现的。该架构已从GICv1发展到最新版本的GICv3和GICv4。Arm有若干个通用中断控制器，为各种Arm Cortex多核处理器系统提供一系列中断管理解决方案。这些控制器从适用于拥有少量CPU核心系统的最简单的GIC-400，到适用于高性能，多芯片系统的GIC-600。GIC-600AE添加了针对高性能ASIL B到ASIL D系统的安全功能。
+
+<br>
+
+## 2. 什么是通用中断控制器
+
+<br>
+
+一个通用中断控制器（GIC）从外设接收中断，对它们进行优先级排序，然后将它们传递给适当的处理器核心。下图显示了一个 GIC 从 n 个不同的外设接收中断，并将它们分发给两个不同的处理器。
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/0.png)
+
+<br>
+
+GIC 是 Arm Cortex-A 和 Arm Cortex-R 等处理器的标准中断控制器。GIC 提供了一种灵活且可扩展的中断管理方法，支持从单个核心到拥有数百个核心的大型多芯片系统。
+
+<br>
+
+### 2.1 Arm CoreLink GIC 的简要历史
+
+<br>
+
+与 Arm 架构一样，GIC 架构随着时间的推移而发展。下表总结了 GIC 规范的主要版本以及与之配合使用的处理器。
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/1.png)
+
+![Untitled](/assets/images/20240321-arm-gic/2.png)
+
+<br>
+
+自发布以来，GICv3 和 GICv4 也已经有了一些小的更新：
+
+- GICv3.1 添加了对`有线中断扩展`、`安全虚拟化`以及`内存系统资源分区和监控（MPAM）`的支持。
+
+- GICv3.2 添加了对 Armv8-R AArch64 的支持。
+
+- GICv3.3 添加了对不可屏蔽中断（NMI）的支持。
+
+- GICv4.1 扩展了对虚拟化的支持，以涵盖对虚拟软件生成中断（vSGIs）的直通。
+
+- GICv4.2 添加了对不可屏蔽虚拟中断直通的支持。
+
+<br>
+
+## 3. Arm GIC 基础
+
+<br>
+
+在本节中，我们将介绍 Arm GICv3 和 GICv4 中断控制器的基本操作。
+
+<br>
+
+### 3.1 中断类型
+
+<br>
+
+GIC 可以处理四种不同类型的中断源：
+
+- `共享外设中断（Shared Peripheral Interrupt, SPI）`：可以传递给任何连接的核心的外设中断。
+- `私有外设中断（Private Peripheral Interrupt, PPI）`：私有于一个核心的外设中断。PPI 的一个例子是来自通用定时器的中断。
+- `软件生成中断（Software Generated Interrupt, SGI）`：SGI 通常用于处理器间通信，并通过向 GIC 中的 SGI 寄存器写入来生成。
+- `本地特定外设中断（Locality-specific Interrupt, LPI）`：LPI 首次在 GICv3 中引入，具有与其他三种中断类型非常不同的编程模型。**参见 [ARM LPI 中断 与 ITS](https://calinyara.github.io/technology/2024/03/21/arm-lpi.html)**
+
+每个中断源由一个 ID 号标识，称为`INTID`。在上述列表中引入的中断类型是根据 INTID 的范围来定义的：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/3.png)
+
+<br>
+
+### 3.2 中断是如何被发送给中断控制器的
+
+<br>
+
+一般来说中断是通过专用的硬件信号从外设发送到中断控制器的，如下图所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/4.png)
+
+<br>
+
+Arm CoreLink GICv3 支持这种模型，但还提供了一种额外的信号机制：`消息传递中断（Message-signaled Interrupt, MSI）`。`MSI` 通过向中断控制器的寄存器写入数据来发送，如下所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/5.png)
+
+<br>
+
+使用MSI将中断从外设转发到中断控制器消除了对每个中断源都需要专用信号线的要求。对于大型系统的设计人员来说，这可能是一个优势，因为在一个 SoC 上可能会路由成百上千个信号，并汇聚到中断控制器上，而这省去了连线的麻烦。
+
+无论中断是作为消息发送还是使用专用信号线发送，对中断处理代码处理中断的方式几乎没有影响。(*注：也许需要对外设进行一些配置。例如，可能需要指定中断控制器的地址*)
+
+在 Arm CoreLink GICv3 中，SPI 可以是`MSI`中断，也可以不是。LPI一定是`MSI`中断。不同的寄存器用于不同类型的中断，如下表所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/6.png)
+
+<br>
+
+### 3.3 中断状态机
+
+<br>
+
+中断控制器为每个 SPI、PPI 和 SGI 中断源维护一个状态机。这个状态机包括四个状态：
+
+- 未激活（Inactive）：中断源当前未被激活。
+- 待处理（Pending）：中断源已被激活，但尚未被处理器核心（PE）确认。
+- 激活（Active）：中断源已被激活，并且已被处理器核心（PE）确认。
+- 激活且待处理（Active and Pending）：一个中断实例已被确认，另一个实例现在正在等待处理。
+
+***注：LPI中断有更简单的状态机，详见 [ARM LPI 中断 与 ITS](https://calinyara.github.io/technology/2024/03/21/arm-lpi.html)*** 
+
+<br>
+
+状态转换如下所示
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/7.png)
+
+<br>
+
+中断的生命周期取决于它是否被配置为电平触发或边沿触发：
+
+- 对于电平触发中断，中断输入上的上升沿会导致中断变为待处理状态，并且会保持中断状态，直到外设取消中断信号。
+- 对于边沿触发中断，中断输入上的上升沿会导致中断变为待处理状态，但中断不会保持。
+
+<br>
+
+### 3.4 电平触发中断
+
+<br>
+
+下图显示了电平触发中断的中断状态转换与中断信号之间的对应关系：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/8.png)
+
+<br>
+
+考虑每个状态转换：
+
+- **从未激活到待处理**：当中断发生时，中断从未激活状态转变为待处理状态。在该时间点，如果中断已启用且具有足够的优先级，则 `GIC`会向 PE 发送中断信号。
+- **从待处理到激活和待处理**：当处理器单元（PE）通过读取 CPU interface 中的某个中断确认寄存器（`IARs`）来确认中断时，中断从待处理状态转变为激活和待处理状态。这个读操作通常是在接收到中断异常后执行的中断处理例程的一部分。在此时，`GIC` 会取消给 PE的中断信号。
+- **从激活和待处理到激活**：当外设取消中断信号时，中断从激活和待处理状态转变为激活状态。这通常是在软件向外设的状态寄存器写入时发生。
+- **从激活到未激活**：当 PE 向 CPU  interface 中的结束中断寄存器（`EOIRs`）写入时，中断从激活状态转变为未激活状态。这表示 PE 已经完成了中断的处理。
+
+<br>
+
+### 3.5 边沿触发中断
+
+<br>
+
+下图显示了边沿触发中断的中断状态转换与中断信号之间的对应关系：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/9.png)
+
+<br>
+
+考虑每个状态转换：
+
+- **从未激活到待处理**：当中断发生时，中断从未激活状态转变为待处理状态。这时，如果中断已启用且具有足够的优先级，则 `GIC` 会向 PE 发送中断信号。
+- **从待处理到激活**：当 PE 通过读取 CPU interface中的某个中断确认寄存器（`IARs`）来确认中断时，中断从待处理状态转变为激活状态。这个读操作通常是在接收到中断异常后执行中断处理例程的一部分。然而，软件也可以轮询 `IARs`。在此时，`GIC`会取消给 PE的中断信号。
+- **从激活到激活和待处理**：如果外设重新发送中断信号，则中断从激活状态转变为激活和待处理状态。
+- **从激活和待处理到待处理**：当 PE 向 CPU interface中的结束中断寄存器（`EOIRs`）写入时，中断从激活和待处理状态转变为待处理状态。这表示 PE 已经完成了中断的第一个实例的处理。在该时间点，`GIC`会重新向 PE 发送中断信号。
+
+<br>
+
+### 3.6 中断发送给哪个核
+
+<br>
+
+Arm 架构为每个处理器单元（PE）分配了一个称为亲和力（`affinity`）的标识符。GIC 使用 affinity 将中断定向到特定的核心。每个 affinity是一个 32 位的值，被分为四个字段，代表四级亲和性：
+
+```bash
+<affinity level 3>.<affinity level 2>.<affinity level 1>.<affinity level 0>
+```
+
+PE的affinity可以通过读取`MPIDR_EL1` 来获取。
+
+不同层级的affinity的确切含义由具体的处理器和SoC定义。例如，Arm Cortex-A53 和 Arm Cortex-A57 处理器使用：
+
+```bash
+<group of groups>.<group of processors>.<processor>.<core>
+```
+
+之后的设计，如 Arm Cortex-A55 和 Arm Cortex-A76 处理器使用：
+
+```bash
+<group of processors>.<processor>.<core>.<thread>
+```
+
+<br>
+
+例如，移动设备的 SoC 可能具有以下布局
+
+- 0.0.0.[0:3] Cores 0 to 3 of a Cortex-A53 processor
+- 0.0.1.[0:1] Cores 0 to 1 of a Cortex-A57 processor
+
+AArch32 和 Armv7-A 只能支持三级affinity。这意味着使用 AArch32 的应用将被限制在affinity前3个级别（0.x.y.z）。`GICD_TYPER.A3V` 可指示中断控制器是否支持 `affinity level 3`。
+
+<br>
+
+### 3.7 安全模型
+
+<br>
+
+Arm GICv3 架构支持 Arm TrustZone 技术。每个 `INTID`必须由软件分配一个`group`并配置相关安全设置。GICv3 支持三种`group`设置，如下表所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/10.png)
+
+<br>
+
+Group 0 的中断总是按FIQs来发送，而 Group 1 的中断会根据 PE 当前的安全状态和异常级别，被标记为 IRQs 或者 FIQs来发送，具体如下：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/11.png)
+
+<br>
+
+这些规则旨在补充AArch64安全状态和异常级别的路由控制。下图显示了一个简化的软件栈，展示了当软件运行在EL0/EL1，发生不同类型的中断时, 会发生的情况。
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/12.png)
+
+<br>
+
+在这个例子中，`IRQs 被路由到 EL1（SCR_EL3.IRQ==0）`，而 `FIQs 被路由到 EL3（SCR_EL3.FIQ==1）`。按上述规则，当运行在 EL1 或 EL0 时，对于当前安全状态的 Group 1 中断会触发 IRQ； 而对于另一个安全状态的中断则会触发 FIQ，并且FIQ会被路由到 EL3。这使得在 EL3 执行的软件能够执行必要的上下文切换。
+
+*注：*
+
+1. *对于 Armv9-A 的 Realm Management Extension，GIC将Realm的状态视为非安全状态*
+2. *LPIs 总是被视为 非安全Group 1 中断*
+
+<br>
+
+### 3.8 对软件的影响
+
+<br>
+
+在配置中断控制器时，软件可控制将 `INTID` 分配给某个中断group。只有在安全状态下执行的软件才能分配 `INTID` 给中断group。通常，只有在安全状态下执行的软件才能够访问安全中断（Group 0 和安全 Group 1）的设置和状态。运行在非安全状态的软件对安全中断设置和状态的访问也可以使能。可以按具体的`INTID`来配置，相关寄存器是 `GICD_NSACRn` 和 `GICR_NSACR`。
+
+<br>
+
+### 3.9 支持单个安全状态
+
+<br>
+
+GICv3 支持 Arm TrustZone 技术，但使用 TrustZone 是可选的。这意味着您可以配置您的具体实现为具有单个安全状态或两个安全状态：
+
+- 当 `GICD_CTLR.DS == 0` 时，支持两个安全状态，即安全状态和非安全状态。
+- 当 `GICD_CTLR.DS == 1` 时，仅支持单个安全状态。
+
+请配置 GIC使用与其连接的PEs相同的安全状态个数。这意味着通常情况下，当连接到 Arm Cortex-A 系列处理器时，GIC 需配置支持两个安全状态，而当连接到 Arm Cortex-R 系列处理器时，GIC则将只支持一个安全状态。
+
+<br>
+
+### 3.10 编程模型
+
+<br>
+
+GICv3中断控制器的寄存器接口分为三组：
+
+- 分发器接口（`Distributor interface, GICD`）
+- 重分发器接口（`Redistributor interface, GICR`）
+- CPU接口（`CPU interface`）
+
+这些接口在下图中进行了说明：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/13.png)
+
+<br>
+
+一般而言，`GICD`和`GICR`用于配置中断，而 `CPU接口`用于处理中断。
+
+<br>
+
+**分发器（`Distributor, GICD`）**
+
+`GICD`是内存映射(MMIO)的，用于配置共享外设中断（SPIs）。`GICD`提供了以下的编程接口：
+
+- 中断优先级和SPIs中断的分发
+- 启用和禁用SPIs中断
+- 设置每个SPI中断的优先级级别
+- 配置每个SPI中断的路由信息
+- 配置每个SPI中断的触发方式，可设置为电平触发或边沿触发
+- 生成MSI型SPI中断
+- 控制SPIs中断的active状态和pending状态
+- 配置在安全状态和非安全状态中使用的编程模型：affinity路由或传统路由
+
+<br>
+
+**重分发器（`Redistributor, GICR`）**
+
+`GICR`是内存映射(MMIO)的, 每个连接的CPU核心都有一个`GICR`。GICR提供了以下的编程接口：
+
+- 启用和禁用SGIs和PPIs
+- 设置SGIs和PPIs的优先级级别
+- 配置每个PPI的触发方式，可设置为电平触发或边沿触发
+- 将每个SGI和PPI分配给一个中断`group`
+- 控制SGIs和PPIs的状态
+- 配置内存中用于存放相关中断属性配置和LPI pending状态的数据结构的基地址
+- 为连接的PE提供功耗管理支持
+
+<br>
+
+**CPU接口（`CPU interface`）**
+
+每个核心都包含一个CPU接口，这些寄存器在GICv3及后续的GIC版本中是系统寄存器  (*注：GICv2中仍是MMIO*）， 通过`ICC_*_ELn`来访问。软件在使用这些寄存器前，必须启用系统寄存器接口。这由`ICC_SRE_ELn`寄存器中的`SRE`位控制，其中n指定异常级别：EL1-EL3。CPU接口提供以下的编程接口：
+
+- 提供通用控制和配置用于启用中断处理
+- Acknowledge一个中断
+- 执行中断的优先级drop和deactivation操作
+- 为PE设置中断优先级mask
+- 定义PE的抢占策略
+- 确定PE的最高优先级Pending中断
+
+<br>
+
+## 4. 配置Arm GIC
+
+<br>
+
+本小节描述如何在裸机环境中启用和配置符合GICv3标准的中断控制器。有关详细的寄存器描述，请参阅 Arm Generic Interrupt Controller Architecture Specification GIC architecture version 3.0 and 4.
+
+LPI类型中断的配置与SPI、PPI和SGI的配置有很大不同，LPI的配置参见 **[ARM LPI 中断 与 ITS](https://calinyara.github.io/technology/2024/03/21/arm-lpi.html)** 。
+
+大多数使用GICv3中断控制器的系统都是多核系统。有一些设置是全局的，这意味着影响所有连接的PEs，另外一些设置特定于单个PE。让我们先看看全局设置，然后再看每个PE的设置。
+
+<br>
+
+### 4.1 全局设置
+
+<br>
+
+`GICD`的控制寄存器（`GICD_CTLR`）必须配置，以启用中断group并设置如下路由模式：
+
+- 启用路由亲和性（ARE比特位）：`GICD_CTLR`中的ARE位控制GIC是以GICv3模式还是传统模式运行。传统模式提供与GICv2的向后兼容性。本文中假定ARE位被设置为1，因此正在使用GICv3模式。
+- 开启中断：`GICD_CTLR`包含用于启用 Group 0、Secure Group 1和 Non-secure Group 1的启用比特位：
+    - `EnableGrp1S` 启用Secure Group 1中断。
+    - `EnableGrp1NS` 启用Non-secure Group 1中断。
+    - `EnableGrp0` 启用 Group 0中断。
+
+*注：Arm CoreLink GIC-600 不支持传统模式操作，ARE 位永久设置为 1。*
+
+<br>
+
+### 4.2 每个 PE 的设置
+
+<br>
+
+### a. GICR配置
+
+每个CPU核心都有自己的`GICR`，如下所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/14.png)
+
+<br>
+
+`GICR`包含一个名为 `GICR_WAKER` 的寄存器，用于记录连接的 PE 是在线还是离线。中断只会转发到 GIC 认为在线的 PE。在复位时，所有的 PE 都被视为离线状态。
+
+要将连接的 PE 设置为在线，软件必须：
+
+- 将 `GICR_WAKER.ProcessorSleep` 清零为 0。
+- 轮询 `GICR_WAKER.ChildrenAsleep`，直到读取到 0 为止。
+
+在配置 CPU 接口之前，软件必须执行这些步骤，否则行为可能是不可预测的。在 PE 离线状态（`GICR_WAKER.ProcessorSleep==1`）时，针对该 PE 的中断将导致唤醒请求信号被拉起。通常，该信号将发送到系统的电源控制器。然后，电源控制器会打开 PE。在唤醒时，该 PE 上的软件将清除 `ProcessorSleep` 位，允许将唤醒 PE 的中断转发。
+
+<br>
+
+### b. CPU接口配置
+
+<br>
+
+CPU接口负责将中断异常传递给其连接的PE。为了启用CPU接口，软件必须配置以下内容：
+
+- **启用系统寄存器访问**
+  
+    CPU接口的（`ICC_*_ELn`）描述了CPU接口寄存器以及它们在GICv3中作为系统寄存器访问的方式。软件必须通过设置`ICC_SRE_ELn`寄存器中的`SRE`位来启用对CPU接口寄存器的访问。
+    
+- **设置优先级掩码和Binary Point寄存器**
+CPU接口包含优先级掩码寄存器（`ICC_PMR_EL1`）和 `Binary Point` 寄存器（`ICC_BPRn_EL1`）。优先级掩码设置了一个中断能转发到PE必须具有的最低优先级。`Binary Point` 寄存器用于优先级分组和抢占。有关这两个寄存器使用更详细的描述，请参阅第5节。
+- **设置EOI模式**
+CPU接口中的`ICC_CTLR_EL1`和`ICC_CTLR_EL3`中的`EOImode`比特位，控制如何处理中断的完成。有关此内容的更详细描述，请参阅5.5小节。
+- **启用中断Group**
+在将某个中断Group的信号转发到PE之前，必须启用该中断Group的发送。软件必须写入`ICC_IGRPEN1_EL1`寄存器以开启Goup 1中断的发送，写入`ICC_IGRPEN0_EL1`寄存器以开启Group 0中断的发送。`ICC_IGRPEN1_EL1`是按安全状态bank的， 这意味着读写`ICC_GRPEN1_EL1`控制的是当前安全状态的Group 1中断使能。在EL3，软件可以使用`ICC_IGRPEN1_EL3`来同时使能安全状态和非安全状态下的Group 1中断。
+
+<br>
+
+### c. PE配置
+
+<br>
+
+还需要对PE进行一些配置，以使其能够接收和处理中断。本文描述Armv8-A兼容的PE在AArch64状态下执行所需的基本步骤。
+
+- **路由控制**
+中断的路由控制位于PE的`SCR_EL3`和`HCR_EL2`中。路由控制位确定中断被发送到哪个异常级别。这些寄存器中的路由位在复位时具有**UNKNOWN**值，因此必须由软件初始化。
+- **中断屏蔽**
+PE在`PSTATE`中还有异常屏蔽位。当这些位设置时，中断被屏蔽。这些位在复位时是被设置的。
+- **向量表**
+PE的向量表位置由`VBAR_ELn`寄存器指定。与`SCR_EL3`和`HCR_EL2`类似，`VBAR_ELn`寄存器在复位时具有**UNKNOWN**值。软件必须将`VBAR_ELn`寄存器设置为指向内存中正确的向量表。
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/15.png)
+
+<br>
+
+### 4.3 SPI, PPI，SGI 中断源配置
+
+<br>
+
+在4.1和4.2中，我们已经了解了如何`配置中断控制器`本身。现在我们将讨论`配置单个中断源`。配置所使用的寄存器取决于中断的类型：
+
+- SPI 通过 `GICD` 配置，使用 `GICD_*` 寄存器。
+- PPI 和 SGI 通过各个 `GICR` 配置，使用 `GICR_*` 寄存器。
+
+<br>
+
+这些配置寄存器如下图所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/16.png)
+
+<br>
+
+对于每个 `INTID`，软件必须配置以下内容：
+
+- **优先级**：`GICD_IPRIORITYn`、`GICR_IPRIORITYn`
+每个 `INTID` 都有一个相关联的优先级，以一个8位无符号值表示。0x00 是最高优先级，0xFF 是最低优先级。运行优先级和抢占描述了 `GICD_IPRIORITYn` 和 `GICR_IPRIORITYn` 中的优先级值如何屏蔽低优先级中断，并控制抢占。中断控制器不需要实现所有8个优先级位。如果 GIC 支持两个安全状态，则必须实现至少5位。如果 GIC 只支持单个安全状态，则必须实现至少4位。
+- **中断Group**：`GICD_IGROUPn`、`GICD_IGRPMODn`、`GICR_IGROUPn`、`GICR_IGRPMODn`
+如安全模型中所述，中断可以配置为属于三个中断Group之一。这些中断组是 `Group 0`、`Secure Group 1` 和 `Non-secure Group 1`。
+- **边沿触发还是电平触发**：`GICD_ICFGRn`、`GICR_ICFGRn`
+对于 PPI 和 SPI，软件必须指定中断是边沿触发还是电平触发。SGI 总是被视为边沿触发，因此对于SGI，`GICR_ICFGR0` 访问结果为“读取总为1，写入被忽略”（RAO/WI）。
+- **使能该中断**：`GICD_ISENABLERn`、`GICD_ICENABLER`、`GICR_ISENABLERn`、`GICR_ICENABLERn`
+每个 `INTID` 都有一个使能位。Arm 建议在启用 `INTID` 之前配置本节中描述的设置。
+- **非可屏蔽中断**：配置为非可屏蔽的中断意味着该中断比同一Group的所有其他可屏蔽中断优先级更高。也就是说，非可屏蔽的 `Non-secure Group 1` 中断被视为比所有其他可屏蔽 `Non-secure Group 1` 中断的优先级更高。
+    - 非可屏蔽属性在 GICv3.3 中添加，需要 PE 中相应的支持。
+    - 只有 `Secure Group 1` 和 `Non-secure Group 1` 中断可以配置为非可屏蔽中断。
+
+<br>
+
+在裸机环境中，通常不需要在初始配置后更改设置。但是，如果必须重新配置中断，例如更改中断Group设置，则应在更改其配置之前首先禁用该中断。大多数配置寄存器的复位值取决于具体实现。这意味着由中断控制器的设计者决定值是什么，这些值可能会因系统而异。
+
+<br>
+
+### 4.4 Arm GICv3.1 和 INTID 扩展
+
+<br>
+
+Arm GICv3.1 添加了对额外 SPI 和 PPI INTID 的支持。配置这些中断的寄存器在它们有一个 E 后缀。
+
+<br>
+
+例如：
+
+- `GICR_ISENABLERn`  ：原 PPI INTID使能
+- `GICR_ISENABLERnE` ：GICv3.1 中扩展的 PPI INTID 的使能
+
+<br>
+
+### 4.5 设置 SPI 的目标 PE
+
+<br>
+
+对于 SPI，必须配置中断的目标PE。这由 `GICD_IROUTERn`或 `GICD_IROUTERnE`(用于 GICv3.1 扩展 SPI) 控制，。每个 SPI 都有一个 `GICD_IROUTERn`寄存器，`Interrupt_Routing_Mode`位控制路由策略。选项包括：
+
+- `GICD_IROUTERn.Interrupt_Routing_Mode == 0`
+  
+    SPI 将按照亲和性配置发送给对应的 PE (A.B.C.D)
+    
+- `GICD_IROUTERn.Interrupt_Routing_Mode == 1`
+  
+    由`GICD`分发器而不是软件选择目标 PE。因此，接受中断的PE是不固定的。这种类型的路由称为 `1-of-N`。PE 可以选择不接收 `1-of-N` 中断。这由 `GICR_CTLR` 中的 `DPG1S`、`DPG1NS` 和 `DPG0` 位控制。
+    
+
+<br>
+
+## 5. 处理中断
+
+<br>
+
+本小节描述当中断发生时会发生什么。中断如何路由到一个 PE，中断如何比较相互的优先级，以及中断结束时要做什么。
+
+<br>
+
+### 5.1 将Pending中断路由到一个 PE
+
+<br>
+
+3.3小节描述了当中断被assert时，中断如何从inactive状态转换为pending状态。当一个中断变为pending状态时，中断控制器根据以下检测决定是否将中断发送到其中一个连接的 PE。这些检测确定了要将中断发送到哪个 PE。
+
+- **检查与中断相关联的Group是否已启用**
+3.7小节的安全模型描述了每个 `INTID` 可被分配到一个中断Group：`Group 0`、`Secure Group 1` 或 `Non-secure Group 1`。对于每个Group，`GICD`和每个 CPU 接口都有一个启用比特位。中断控制器检查与该中断的 `INTID`相关联的Group的启用位是否已设置。一个属于被禁用Group的中断无法被发送到 PE。这些中断保持在pending状态，直到启用该中断Group。
+- **检查中断是否已启用**
+已被禁用的中断可以变为pending状态，但不会被发送到 PE。
+- **检查路由控制，以确定哪些 PE 可以接收中断**
+  哪些 PE 可以接收中断取决于要发送的中断类型：
+    - 对于SPIs的路由，由 `GICD_IROUTERn` 控制。一个 SPI 可以针对一个特定的 PE，或者针对任何一个连接的 PE。
+    - 对于LPIs，路由信息来自 `ITS`，详见 **[ARM LPI 中断 与 ITS](https://calinyara.github.io/technology/2024/03/21/arm-lpi.html)**
+    - PPIs是特定于一个 PE 的，只能由该 PE 处理。
+    - 对于SGIs，发起 的PE 会设定目标 PE 列表。这在第6节“发送和接收软件生成中断”中进一步描述。
+- **检查中断优先级和优先级掩码，以确定哪些 PE 适合处理中断**
+每个 PE 在其 CPU 接口中都有一个`ICC_PMR_EL1`寄存器。该寄存器设置了中断必须具有的最低优先级，以便将中断发送到该 PE。只有当中断的优先级高于掩码标记的优先级时，才会被发送到 PE。
+- **检查运行时优先级，以确定哪些 PE 可用于处理中断**
+  
+    5.4 小节会讨论运行时优先级的概念以及其是如何影响抢占的。PE的运行时优先级随着其处理的中断而变化，如果PE当前没有处理中断，那么运行优先级就是空闲优先级：0xFF。只有具有比运行优先级更高的优先级的中断才能抢占当前中断。
+    
+
+<br>
+
+### 5.2 接收中断
+
+<br>
+
+中断处理程序开始执行时，软件并不知道它所处理的是哪个中断。处理程序必须读取一个中断确认寄存器 (`IARs`) 以获取中断的 INTID。
+
+有两个 IARs：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/17.png)
+
+<br>
+
+读取一个 `IAR` 返回被接收中断的 `INTID`，并更新中断的状态机。通常，`IAR` 在进入中断处理程序时被读取。但是，软件可以随时读取这些寄存器。有时，`IAR` 无法返回有效的 `INTID`。例如，软件读取 `ICC_IAR0_EL1`来确认 `Group 0` 中断，但挂起的中断属于 `Group 1`。在这种情况下，读取将返回保留的 `INTID` 之一，
+
+<br>
+
+如下表所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/18.png)
+
+<br>
+
+如果读取的 `IAR` 返回的是上述保留值之一，则不会确认中断。
+
+<br>
+
+### 5.3 中断处理的示例
+
+<br>
+
+以下示意图显示了一个移动系统的示例，其中调制解调器中断表示有电话来电。此中断预期由非安全状态中的 Rich OS 处理。
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/19.png)
+
+<br>
+
+处理中断的步骤如下：
+
+1. 在 PE 执行安全 EL1 下的可信 OS 时，调制解调器中断变为挂起状态。由于调制解调器中断配置为非安全 Group 1，它将被作为 FIQ 信号。由于 `SCR_EL3.FIQ==1`，异常被传递到 EL3。
+2. 在 EL3 执行的安全监视器软件读取 `IAR`，返回值为 `1021`。此值表示预计将在非安全状态下处理中断。然后，安全监视器执行必要的上下文切换操作。
+3. 现在 PE 处于非安全状态，中断被重新作为 IRQ 信号，并传递到非安全 EL1 由 Rich OS 处理。
+
+在此示例中，非安全 Group 1 中断导致从安全 OS 中立即退出。这可能并不总是我们所想要的。下图显示了此示例的另一种处理模型，其中中断最初被传递到安全 EL1，由安全EL1主动切换到EL3。
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/20.png)
+
+<br>
+
+处理中断的步骤如下：
+
+1. 当 PE 在安全 EL1 下执行可信 OS 时，调制解调器中断变为挂起状态。由于调制解调器中断配置为非安全 Group 1，它将被作为 FIQ 信号。由于 `SCR_EL3.FIQ==0`，异常被传递到安全 EL1。
+2. 可信 OS 执行操作以清理其内部状态。当准备就绪时，可信 OS 使用 `SMC` 指令转移到非安全状态。
+3. `SMC` 异常传递到 EL3。在 EL3 执行的安全监视器软件执行必要的上下文切换操作。
+4. 现在 PE 处于非安全状态，中断被作为 IRQ 信号并传递到非安全 EL1 由 Rich OS 处理。
+
+<br>
+
+### 5.4 运行时优先级与抢占
+
+<br>
+
+`PMR` 寄存器设置了要转发到 PE 的中断的最低优先级。GICv3 架构还有一个`运行优先级`的概念。当 PE 确认一个中断时，它的运行优先级就变成与中断的优先级相同。当 PE 写EOI 寄存器时，运行优先级会恢复到其以前的值。下图显示了 PE 的运行优先级如何随时间变化
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/21.png)
+
+<br>
+
+当前运行是优先级可通过CPU 接口中的 `Running Priority register` (`ICC_RPR_EL1`) 寄存器读取。
+
+当考虑抢占时，运行优先级的概念非常重要。抢占发生在当一个高优先级中断被发送到一个已经在处理一个低优先级中断的 PE 时。抢占为软件引入了一些额外的复杂性，但它可以防止低优先级中断阻塞高优先级中断的处理。
+
+<br>
+
+下面的示例图显示了如果不允许抢占会发生什么：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/22.png)
+
+<br>
+
+上例中，高优先级中断被阻塞，直到先前被触发的低优先级中断被处理。现在考虑相同的情况，但启用了抢占：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/23.png)
+
+<br>
+
+当较高优先级中断变为pending状态时，它会抢占先前触发的低优先级中断。上图显示了1级抢占，实际应用中可以有多级抢占。
+
+Arm CoreLink GICv3架构允许软件通过指定抢占发生所需的优先级差异来控制抢占。这通过`Binary Point register` (`ICC_BPRn_EL1`) 寄存器来控制。`BPR`寄存器将优先级分为两个字段，组优先级和子优先级，如下所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/24.png)
+
+<br>
+
+对于抢占，只考虑组优先级位，子优先级位被忽略
+
+例如，考虑以下三个中断：
+
+- INTID A 的优先级为 0x10。
+- INTID B 的优先级为 0x20。
+- INTID C 的优先级为 0x21。
+
+在这个例子中：
+
+- A 可以抢占 B 或 C。
+- B 不能抢占 C，因为 B 和 C 具有相同的组优先级。
+
+<br>
+
+一般将组和子优先级之间的分割设置为 N=4，如下所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/25.png)
+
+<br>
+
+使用这种分割方式，对于抢占而言，B 和 C 现在抢占的意义上优先级是相同的。但是，A 仍然具有更高的优先级，它可以抢占 B 或 C。
+
+`BPR`寄存器只影响抢占。在选择是否pending中断时，不使用`BPR`寄存器。抢占要求**中断处理程序必须支持嵌套**。
+
+<br>
+
+### 5.5 中断结束
+
+<br>
+
+一旦中断被处理，软件必须通知中断控制器中断已被处理，以便中断状态机可以过渡到下一个状态。 Arm CoreLink GICv3 架构将此视为两个任务:
+
+- **优先级Drop**
+  
+    这意味着将运行优先级将drop到该中断被触发之前的值。
+    
+- **Deactivation**
+  
+    更新当前正在处理的中断的状态机。通常情况下，这将是从Active状态到Inactive状态的转变。
+    
+
+<br>
+
+在 GICv3 架构中，`优先级Drop`和`Deactivation`可以同时进行，也可以分开进行。这取决于 `ICC_CTLR_ELn.EOImode` 的设置：
+
+- `EOImode = 0`：对于 Group 0 中断，写入 `ICC_EOIR0_EL1`，对于 Group 1 中断，写入 `ICC_EOIR1_EL1`，将同时触发`优先级Drop`和`Deactivation`两个任务。这种模式通常用于简单的裸机环境。
+- `EOImode = 1`：对于 Group 0 中断，写入 `ICC_EOIR0_EL1`，对于 Group 1 中断，写入 `ICC_EOIR1_EL1`，执行`优先级Drop`。`Deactivation`需要单独写入 `ICC_DIR_EL1` 。大多数软件将使用 `EOImode==0`。`EOImode==1` 主要在虚拟化场景，由Hypervisor使用。
+
+<br>
+
+### 5.6 检查最高优先级挂起中断和运行时优先级
+
+<br>
+
+正如它们的名称所示，`Highest Priority Pending Interrupt registers, HPPIR` 寄存器 `ICC_HPPIR0_EL1` 和 `ICC_HPPIR1_EL1` 报告了 PE 的最高优先级挂起中断的 `INTID`。
+
+运行时优先级在5.4小节中介绍过，由`Running Priority register, RPR`寄存器（`ICC_RPR_EL1`）报告。
+
+<br>
+
+### 5.7 检查各个 INTID 的状态
+
+<br>
+
+`GICD`提供了指示每个 SPI 当前状态的寄存器。类似地，`GICR`为其连接的 PE 提供了指示 PPI 和 SGI 状态的寄存器。这些寄存器也可以将中断移动到特定状态。这有时可能会很有用，例如，测试配置是否正确时无需使用物理外围设备来真地发送中断。以下是报告active状态的寄存器。pending状态寄存器具有相同的格式：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/26.png)
+
+<br>
+
+*注：处于非安全状态的软件不能查看 Group 0 或安全Group 1 中断的状态，除非 `GICD_NASCRn` 或 `GICR_NASCRn` 允许访问。*
+
+<br>
+
+## 6. 发送与接收软件生成中断(SGI)
+
+<br>
+
+软件生成中断 `Software Generated Interrupts (SGIs)` 是软件可以通过配置中断控制器中的寄存器来触发的中断。`SGI` 是通过写入 CPU 接口中的以下 SGI 寄存器之一来生成的
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/27.png)
+
+<br>
+
+上述寄存器的layout如下所示
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/28.png)
+
+<br>
+
+**控制 SGI ID**
+`SGI ID` 字段控制生成的 `INTID`。如中断类型中所述，`INTID 0-15` 用于 SGIs。
+
+<br>
+
+**控制目标**
+SGI 寄存器中的 `IRM`中断路由模式字段控制 SGI 发送到哪个 PE 或 PEs。有两个选项：
+
+- `IRM = 0`
+中断发送到 `<aff3>.<aff2>.<aff1>.<Target List`>，其中 `<target list>` 包含16个比特位。这意味着中断最多可发送到 16 个 PE，其中可能包括SGI发起 PE。
+- `IRM = 1`
+中断发送到所有连接的 PE，除了发起SGI的 PE（自身）。
+
+<br>
+
+**控制安全状态和分组**
+SGI 的安全状态和分组由以下字段控制：
+
+- 由发起SGI的 PE 配置的 SGI 寄存器，如 `ICC_SGI0R_EL1`、`ICC_SGI1R_EL1` 或 `ICC_ASGIR_EL1`
+- SGI 目标 PE 的 `GICR_IGROUPR0`和 `GICR_IGRPMODR0`寄存器。
+
+在 Secure 状态下运行的软件可以发送 Secure 和 Non-secure SGIs。软件是否能够在 Non-secure 状态下生成 Secure SGIs 受 `GICR_NSACR` 控制。
+
+此寄存器只能由在 Secure 状态下运行的软件访问。下表显示了 `GIC`确定是否转发中断时会检查的信息：
+
+- 发起SGI的 PE 的安全状态
+- SGI目标 PE的中断处理配置
+- SGI 寄存器
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/29.png)
+
+<br>
+
+- 上表假定 `GICD_CTLR.DS==0`。当 `GICD_CTLR.DS==1` 时，带 (*) 标记的 SGIs 也会被转发。
+
+<br>
+
+### SGI在GICv3和GICv2的不同
+
+<br>
+
+在 Arm GICv2 中，SGI 的 INTID 在发送 PE 和目标 PE都会保存 ，一个 PE 可能会pending最多8个来自其他PE 的同一个 SGI INTID 。而在 Arm GICv3 中，SGI 仅由目标 PE 保存，这意味着给定的 PE 只能有一个SGI INTID pending。让我们通过一个示例来说明这种差异。PE A 和 PE B 同时将 SGI INTID 5 发送到 PE C，如下所示：
+
+<br>
+
+![Untitled](/assets/images/20240321-arm-gic/30.png)
+
+<br>
+
+PE C 将会收到多少个中断？
+
+- 对于 GICv2：两个中断
+GIC 将从 A 和 B 那里收到两个中断。两个中断的顺序取决于各自的设计以及精确的时序。发送SGI的PE的ID会作为前缀附加到INTID上，从 `GICC_IAR`读取，可被接收SGI的PE用来区分发送PE。
+- 对于 GICv3：一个中断
+因为发送 PE 不对 SGI 进行保存，所以相同的中断不能同时pending在两个 PE 上。因此，C 只会收到一个中断，ID 为 5，没有前缀。
+
+该示例假设两个中断是同时或者说几乎同时发送的。如果 C 能够在第二个 SGI 到达之前Ack第一个 SGI，则在 GICv3 中 C 仍将看到两个中断。
+
+
+
+<br>
+
+<br>
+
+<!-- Google tag (gtag.js) -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-69PP8GKYST"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-69PP8GKYST');
+</script>
+
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-66555622-4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-66555622-4');
+</script>
+
+
+<!-- Google tag (gtag.js) -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-27WH7FZ7KT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-27WH7FZ7KT');
+</script>

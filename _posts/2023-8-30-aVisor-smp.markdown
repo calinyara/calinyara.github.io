@@ -21,7 +21,7 @@ The Raspberry Pi 3/4 has four CPU cores. **aVisor** (v0.2.0) supports user-defin
 ### References
 
 - [aVisor: A Tiny Hypervisor for Raspberry Pi](https://calinyara.github.io/technology/2023/02/25/aVisor-en.html)
-- [aVisor: Supports loading and running virtual machines dynamically](https://calinyara.gitlab.io/technology/2023/08/13/aVisor-en-2.html)
+- [aVisor: Supports loading and running virtual machines dynamically](https://calinyara.github.io/technology/2023/08/13/aVisor-en-2.html)
 - ```shell
   git clone https://github.com/ssqre/aVisor.git
   cd aVisor
