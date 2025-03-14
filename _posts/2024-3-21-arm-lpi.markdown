@@ -207,8 +207,8 @@ LPI 配置信息存储在内存中的表中，而不是寄存器中。为了性�
 当外设向 `GITS_TRANSLATER` 写入消息时，`ITS` 执行以下操作：
 
 1. 使用`Device ID` 从设备表中选择适当的条目。此条目标识要使用的中断转换表。
-2. 使用`Event ID` 从所选的中断转换表中选择适当的条目。此条目提供 `INTID` 和 **`Collection** ID`。
-3. 使用**`Collection** ID` 从集合表中选择所需的条目，返回路由信息。
+2. 使用`Event ID` 从所选的中断转换表中选择适当的条目。此条目提供 `INTID` 和 `Collection ID`。
+3. 使用`Collection ID` 从集合表中选择所需的条目，返回路由信息。
 4. 将中断转发到目标 `GICR`。
 
 <br>
